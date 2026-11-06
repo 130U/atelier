@@ -1,4 +1,4 @@
-import { etudes, byId, nameOf, clock, relation, partnerOf, keyIndex, fifths, hash, pigment, PLATE, type Etude } from '../lib/theory';
+import { etudes, byId, nameOf, clock, relation, partnerOf, companions, positionAngle, keyIndex, fifths, hash, pigment, PLATE, type Etude } from '../lib/theory';
 import { Player } from './player';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/?$/, '/');
@@ -106,8 +106,9 @@ export function start() {
     return div;
   }
 
-  // Neighbours: the étude published beside it, those in the same or the
-  // relative key, and the nearest a fifth away.
+  // Neighbours: the étude published beside it, its companions in the same
+  // star system, those in its relative key, and those in its dominant or
+  // subdominant, each named in the terms of harmony.
   function neighbours(e: Etude) {
     const out: { e: Etude; why: string }[] = [];
     const seen = new Set([e.id]);
@@ -118,11 +119,20 @@ export function start() {
     };
     const p = partnerOf(e);
     add(p, `published beside it, ${relation(e, p)}`);
-    for (const x of etudes) if (x.tonic === e.tonic && x.mode === e.mode) add(x, 'in the same key');
-    for (const x of etudes) if (keyIndex(x) === keyIndex(e) && x.mode !== e.mode) add(x, 'in its relative key');
-    const fifth = etudes.filter((x) => x.mode === e.mode && Math.min((keyIndex(x) - keyIndex(e) + 12) % 12, (keyIndex(e) - keyIndex(x) + 12) % 12) === 1);
-    for (const x of fifth.slice(0, 2)) add(x, 'a fifth away');
+    for (const x of companions(e)) add(x, 'in the same key, its companion star');
+    for (const x of etudes) if (keyIndex(x) === keyIndex(e) && x.mode !== e.mode) add(x, relation(e, x));
+    for (const x of etudes) {
+      const up = (x.tonic - e.tonic + 12) % 12;
+      if (x.mode === e.mode && (up === 7 || up === 5)) add(x, relation(e, x));
+    }
     return out;
+  }
+
+  function multiplicity(e: Etude) {
+    const c = companions(e);
+    if (!c.length) return 'single';
+    const names = c.map((x) => `Op. ${x.op} No. ${x.no}`).join(' and ');
+    return `${c.length === 1 ? 'double' : 'triple'}, with ${names}`;
   }
 
   function showNow(e: Etude) {
@@ -146,7 +156,15 @@ export function start() {
     ident.textContent = `Op. ${e.op} · No. ${e.no}`;
     nameEl.textContent = nameOf(e);
     zh.textContent = e.zh;
-    facts.replaceChildren(fact('key', e.key), fact('tempo', e.tempo), fact('length', clock(e.duration)));
+    facts.replaceChildren(
+      fact('key', e.key),
+      fact('position angle', `${positionAngle(e)}°, ${e.mode === 'major' ? 'outer' : 'inner'} ring`),
+      fact('magnitude', e.magnitude.toFixed(1)),
+      fact('multiplicity', multiplicity(e)),
+      fact('tempo', e.tempo),
+      fact('duration', clock(e.duration)),
+      fact('onsets', String(e.onsets)),
+    );
     relations.replaceChildren(
       ...neighbours(e).map(({ e: x, why }) => {
         const li = document.createElement('li');

@@ -1,22 +1,23 @@
 ---
-import '@fontsource/pinyon-script/400.css';
+import '@fontsource/reenie-beanie/400.css';
 import '@fontsource/cormorant-garamond/400.css';
 import '@fontsource/cormorant-garamond/400-italic.css';
 import '@fontsource/cormorant-garamond/500.css';
 import '@fontsource/jetbrains-mono/400.css';
 import '../styles/global.css';
 import '../styles/sky.css';
-import { etudes, LETTERS, MINOR_LETTERS, PIGMENTS, keyIndex, pigment, short, nameOf, clock } from '../lib/theory';
+import { etudes, LETTERS, MINOR_LETTERS, PIGMENTS, keyIndex, pigment, short, clock } from '../lib/theory';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const site = Astro.site ?? new URL('https://www.theodoreoy.com');
 const title = 'The Étude Sky';
 const description =
-  "Chopin's twenty-four études placed by key on the circle of fifths: two constellations, one star for each étude, a watercolour plate drawn from each recording.";
+  "Chopin's twenty-four études charted as stars on the circle of fifths, each with a plate drawn from its recording. Curated by Theodore Ouyang.";
 const total = etudes.reduce((s, e) => s + e.duration, 0);
 
-// The chart: angle is the key around the circle of fifths, C at the top;
+// The chart: position angle is the key around the circle of fifths, C at 0°;
 // the outer ring holds major keys, the inner ring their relative minors.
+// Stars are drawn by magnitude, as in a star atlas.
 const C = 500;
 const RING = { major: 330, minor: 205 };
 const at = (k: number, r: number, along = 0) => {
@@ -32,7 +33,7 @@ const stars = etudes.map((e) => {
   const g = groups.get(`${keyIndex(e)}-${e.mode}`)!;
   const along = (g.indexOf(e.id) - (g.length - 1) / 2) * 44;
   const p = at(keyIndex(e), RING[e.mode], along);
-  return { e, ...p, r: 7 + e.duration / 26 };
+  return { e, ...p, r: 6 + (4.6 - e.magnitude) * 5 };
 });
 const route = (op: number) =>
   stars
@@ -44,6 +45,7 @@ const arc = (k: number, r: number) => {
   const a1 = ((k + 0.42) / 12) * Math.PI * 2;
   return `M${C + Math.sin(a0) * r} ${C - Math.cos(a0) * r} A${r} ${r} 0 0 1 ${C + Math.sin(a1) * r} ${C - Math.cos(a1) * r}`;
 };
+const ticks = Array.from({ length: 60 }, (_, k) => k);
 ---
 
 <!doctype html>
@@ -63,7 +65,6 @@ const arc = (k: number, r: number) => {
     <title>{title}</title>
   </head>
   <body>
-
     <main class="stage">
       <section class="sky-col" aria-label="The star chart">
         <figure class="chart">
@@ -78,7 +79,13 @@ const arc = (k: number, r: number) => {
             </defs>
             <circle cx={C} cy={C} r={RING.major} class="ring" />
             <circle cx={C} cy={C} r={RING.minor} class="ring" />
-            <circle cx={C} cy={C} r="424" class="ring faint" />
+            <circle cx={C} cy={C} r="440" class="ring" />
+            <circle cx={C} cy={C} r="448" class="ring faint" />
+            {ticks.map((k) => {
+              const a = at(k, 440);
+              const b = at(k, k % 5 === 0 ? 426 : 433);
+              return <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} class={k % 5 === 0 ? 'tick major' : 'tick'} />;
+            })}
             {LETTERS.map((_, k) => {
               const a = at(k, 112);
               const b = at(k, 372);
@@ -93,8 +100,8 @@ const arc = (k: number, r: number) => {
               const p = at(k, 150);
               return <text x={p.x} y={p.y} dy="0.35em" class="key minor">{l}</text>;
             })}
-            <text x={C} y={C - 6} class="centre">circle</text>
-            <text x={C} y={C + 18} class="centre">of fifths</text>
+            <text x={C} y={C - 4} class="centre">circle</text>
+            <text x={C} y={C + 26} class="centre">of fifths</text>
             <polyline points={route(10)} class="route op10" />
             <polyline points={route(25)} class="route op25" />
             <path id="trail" class="trail" d="" />
@@ -104,7 +111,7 @@ const arc = (k: number, r: number) => {
                 data-id={s.e.id}
                 tabindex="0"
                 role="button"
-                aria-label={`Op. ${s.e.op}, No. ${s.e.no}, ${s.e.key}${s.e.en ? `, ${s.e.en}` : ''}`}
+                aria-label={`Op. ${s.e.op}, No. ${s.e.no}, ${s.e.key}${s.e.en ? `, ${s.e.en}` : ''}, magnitude ${s.e.magnitude}`}
                 style={`--pigment:${pigment(s.e)}`}
               >
                 <circle cx={s.x} cy={s.y} r={s.r * 2.3} class="halo" filter="url(#wash)" />
@@ -117,7 +124,7 @@ const arc = (k: number, r: number) => {
           <div class="tip" id="tip" aria-hidden="true"></div>
         </figure>
 
-        <nav class="sequence" aria-label="All études in published order">
+        <nav class="sequence" aria-label="All études in order of publication">
           {[10, 25].map((op) => (
             <div class="row">
               <span class="row-label">Op. {op}</span>
@@ -137,10 +144,12 @@ const arc = (k: number, r: number) => {
         </nav>
 
         <dl class="legend">
-          <div><dt>angle</dt><dd>the key, a fifth apart, C at the top</dd></div>
-          <div><dt>rings</dt><dd>major outside, its relative minor inside</dd></div>
-          <div><dt>star</dt><dd>colour is the key; size is the length of the recording</dd></div>
-          <div><dt>lines</dt><dd><span class="sample solid"></span>Op. 10 in order · <span class="sample dashed"></span>Op. 25 in order</dd></div>
+          <div><dt>position angle</dt><dd>the key on the circle of fifths: C at 0°, each fifth 30° clockwise</dd></div>
+          <div><dt>ring</dt><dd>major keys outside; each relative minor inside, at the same angle</dd></div>
+          <div><dt>magnitude</dt><dd>loudness of the recording on Pogson's scale, one magnitude to 4 dB; brighter stars are drawn larger</dd></div>
+          <div><dt>colour</dt><dd>the key, read from the wheel around the chart</dd></div>
+          <div><dt>multiple stars</dt><dd>études in the same key, one system: a triple in A minor, seven doubles</dd></div>
+          <div><dt>asterisms</dt><dd><span class="sample solid"></span>Op. 10 · <span class="sample dashed"></span>Op. 25, each joined in order of publication</dd></div>
         </dl>
       </section>
 
@@ -150,56 +159,64 @@ const arc = (k: number, r: number) => {
             <p class="eyebrow">Atelier · curated by <a href="https://www.theodoreoy.com/">Theodore Ouyang</a></p>
             <h1>{title}</h1>
             <p class="lede">
-              Chopin's twenty-four études, placed by key. Fifteen keys hold all twenty-four, so some stars are double and one is triple, and the order
-              in which Chopin published them draws two constellations.
+              Chopin's twenty-four études, charted as stars. Fifteen keys hold all twenty-four, so some are double stars and one is triple, and the
+              order of publication traces two asterisms across the sky.
             </p>
           </div>
           <button type="button" class="link about-link" data-about>about</button>
         </header>
-        <aside class="panel" id="panel" aria-live="polite">
-        <section class="intro" id="intro">
-          <h2 class="script">Twenty-four stars</h2>
-          <p>
-            Choose a star to see its plate and hear it, or begin at the beginning and let the cycle play through, {Math.round(total / 60)} minutes
-            in the order Chopin published it.
-          </p>
-          <div class="actions">
-            <button type="button" class="primary" data-begin>Begin with Op. 10, No. 1</button>
-          </div>
-          <p class="note">
-            Read the lines. Op. 10 is built mostly from pairs in relative keys, so its line keeps stepping straight from the outer ring to the
-            inner. Op. 25 moves more freely, often by a third. A minor holds three études; seven other keys hold two each.
-          </p>
-        </section>
 
-        <article class="etude" id="etude" hidden>
-          <figure class="plate">
-            <button type="button" class="plate-open" id="plate-open" aria-label="Open the plate at full size">
-              <img id="plate-img" alt="" width="1500" height="1500" />
-              <canvas id="plate-live" aria-hidden="true"></canvas>
-            </button>
-          </figure>
-          <p class="ident" id="ident"></p>
-          <h2 class="script" id="name"></h2>
-          <p class="zh" id="zh" lang="zh-Hans"></p>
-          <dl class="facts" id="facts"></dl>
-          <section class="relations">
-            <h3>Its neighbours in the sky</h3>
-            <ul id="relations"></ul>
-          </section>
-          <details class="reading">
-            <summary>How the plate is drawn</summary>
+        <aside class="panel" id="panel" aria-live="polite">
+          <section class="intro" id="intro">
+            <figure class="epigraph">
+              <blockquote>
+                <p lang="en">Nature always wears the colors of the spirit.</p>
+                <p lang="zh-Hans" class="zh-line">自然总披着心灵的色彩。</p>
+              </blockquote>
+              <figcaption>Ralph Waldo Emerson, <cite>Nature</cite> (1836), chapter I</figcaption>
+            </figure>
             <p>
-              Every mark comes from this recording. Angle is the pitch, placed on the circle of fifths; distance from the centre is time; each dot is
-              a note as it is struck, sized by how hard. The wash is the colour of the key, deepest where the music is loudest. Gold marks the
-              strongest notes, each joined to its nearest.
+              When I look up at the night sky, I think of Chopin's études. This chart is the picture that forms in my mind. Choose a star to see its
+              plate and hear it, or begin at the beginning and let the cycle play through, {Math.round(total / 60)} minutes in order of publication.
             </p>
-          </details>
-          <div class="step">
-            <button type="button" class="link" data-step="-1">← previous</button>
-            <button type="button" class="link" data-step="1">next →</button>
-          </div>
-        </article>
+            <div class="actions">
+              <button type="button" class="primary" data-begin>Begin with Op. 10, No. 1</button>
+            </div>
+            <p class="note">
+              Read the asterisms. Op. 10 is built mostly from pairs in relative keys, so its line keeps stepping straight from the outer ring to the
+              inner. Op. 25 moves more freely, often by mediant, a third at a time.
+            </p>
+          </section>
+
+          <article class="etude" id="etude" hidden>
+            <figure class="plate">
+              <button type="button" class="plate-open" id="plate-open" aria-label="Open the plate at full size">
+                <img id="plate-img" alt="" width="1500" height="1500" />
+                <canvas id="plate-live" aria-hidden="true"></canvas>
+              </button>
+            </figure>
+            <p class="ident" id="ident"></p>
+            <h2 class="script" id="name"></h2>
+            <p class="zh" id="zh" lang="zh-Hans"></p>
+            <dl class="facts" id="facts"></dl>
+            <section class="relations">
+              <h3>Its neighbours in the sky</h3>
+              <ul id="relations"></ul>
+            </section>
+            <details class="reading">
+              <summary>How the plate is drawn</summary>
+              <p>
+                A polar plot of the recording. Position angle is pitch class, read from a chromagram and placed on the circle of fifths; radial
+                distance is elapsed time. Each point is a note onset, found by spectral flux and drawn larger the stronger the attack. Every pitch class
+                keeps its colour from the wheel, laid where and when it sounds, deeper where the music is louder. Gold marks the strongest onsets,
+                joined by a minimum spanning tree.
+              </p>
+            </details>
+            <div class="step">
+              <button type="button" class="link" data-step="-1">← previous</button>
+              <button type="button" class="link" data-step="1">next →</button>
+            </div>
+          </article>
         </aside>
       </div>
     </main>
@@ -231,21 +248,26 @@ const arc = (k: number, r: number) => {
       <button type="button" class="link close" data-close>close</button>
       <h2 class="script" id="about-title">About</h2>
       <p>
-        Frédéric Chopin published his études in two books of twelve: Op. 10 in 1833, Op. 25 in 1837. Here each étude is a star, placed by its key
-        on the circle of fifths, and a plate, painted from its recording by a fixed set of rules.
+        When I look up at the stars, I think of Chopin's twenty-four études. This sky is the picture that forms in my mind: each étude a star,
+        placed by its key, and each a plate drawn from the music itself. Someone else, looking up, would see another sky.
+      </p>
+      <figure class="epigraph">
+        <blockquote>
+          <p lang="en">Nature always wears the colors of the spirit.</p>
+          <p lang="zh-Hans" class="zh-line">自然总披着心灵的色彩。</p>
+        </blockquote>
+        <figcaption>Ralph Waldo Emerson, <cite>Nature</cite> (1836), chapter I; Chinese translation mine</figcaption>
+      </figure>
+      <p>
+        Emerson opens that chapter by asking his reader to look at the stars, and closes it by noticing that the same landscape can look different to
+        the same person from one day to the next. So it is with this sky.
       </p>
       <dl class="credits">
-        <div><dt>music</dt><dd>Frédéric Chopin, Études Op. 10 and Op. 25</dd></div>
-        <div>
-          <dt>recordings</dt>
-          <dd>
-            Edward Neeman, for Musopen's <a href="https://www.kickstarter.com/projects/Musopen/set-chopin-free">Set Chopin Free</a>, released into the
-            public domain; files from <a href="https://commons.wikimedia.org/wiki/Category:Set_Chopin_Free">Wikimedia Commons</a>, loudness-matched
-          </dd>
-        </div>
-        <div><dt>plates</dt><dd>Computed from each recording's pitch, onsets and loudness, and painted as watercolour on paper</dd></div>
+        <div><dt>music</dt><dd>Frédéric Chopin, 12 Études, Op. 10 (1833) and 12 Études, Op. 25 (1837)</dd></div>
+        <div><dt>recordings</dt><dd>Edward Neeman, piano; recorded for Musopen's Set Chopin Free (2014), public domain; loudness-matched</dd></div>
+        <div><dt>method</dt><dd>Chromagram for pitch class, spectral flux for onsets, gated loudness for magnitude on Pogson's scale</dd></div>
+        <div><dt>plates</dt><dd>Polar plots of each recording, in watercolour and gold</dd></div>
         <div><dt>curated by</dt><dd><a href="https://www.theodoreoy.com/">Theodore Ouyang</a></dd></div>
-        <div><dt>made with</dt><dd>Claude · <a href="https://github.com/130U/atelier">source</a></dd></div>
       </dl>
     </dialog>
 

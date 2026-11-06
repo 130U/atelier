@@ -52,11 +52,11 @@
   color: var(--ink-soft);
 }
 .top h1 {
-  margin: 2px 0 0;
+  margin: 6px 0 0;
   font-family: var(--script);
   font-weight: 400;
-  font-size: 66px;
-  line-height: 1.1;
+  font-size: 76px;
+  line-height: 0.95;
 }
 .lede {
   grid-column: 1 / -1;
@@ -107,6 +107,15 @@
 #sky .ring.faint {
   stroke-dasharray: 2 6;
 }
+#sky .tick {
+  stroke: var(--ink);
+  stroke-width: 1;
+  opacity: 0.35;
+}
+#sky .tick.major {
+  stroke-width: 1.6;
+  opacity: 0.6;
+}
 #sky .spoke {
   stroke: var(--line);
   stroke-width: 1;
@@ -132,7 +141,7 @@
 }
 #sky .centre {
   font-family: var(--script);
-  font-size: 30px;
+  font-size: 34px;
   text-anchor: middle;
   fill: var(--ink-faint);
 }
@@ -299,14 +308,15 @@
   padding-top: 14px;
   border-top: 1px dashed var(--line-strong);
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px 28px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
   font-size: 17px;
+  line-height: 1.35;
   color: var(--ink-soft);
 }
 .legend div {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
+  grid-template-columns: 112px minmax(0, 1fr);
   gap: 10px;
   align-items: baseline;
 }
@@ -334,8 +344,37 @@
 }
 .panel h2.script {
   margin: 0;
-  font-size: 50px;
+  font-size: 58px;
+  line-height: 1;
+}
+.epigraph {
+  margin: 0 0 18px;
+}
+.epigraph blockquote {
+  margin: 0;
+}
+.epigraph p {
+  margin: 0;
+  font-family: var(--script);
+  font-size: 34px;
   line-height: 1.15;
+  color: var(--ink);
+}
+.epigraph .zh-line {
+  margin-top: 6px;
+  font-family: 'Songti SC', 'STSong', 'Noto Serif SC', 'SimSun', serif;
+  font-size: 18px;
+  letter-spacing: 0.12em;
+  color: var(--ink-soft);
+}
+.epigraph figcaption {
+  margin-top: 8px;
+  font-size: 16px;
+  font-style: italic;
+  color: var(--ink-faint);
+}
+.epigraph figcaption::before {
+  content: '— ';
 }
 .intro p {
   margin: 12px 0 0;
@@ -414,7 +453,7 @@
 .facts div,
 .credits div {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
+  grid-template-columns: 118px minmax(0, 1fr);
   gap: 12px;
   align-items: baseline;
 }
@@ -577,7 +616,7 @@
 }
 .now-name {
   font-family: var(--script);
-  font-size: 28px;
+  font-size: 32px;
   line-height: 1;
 }
 .bar {
@@ -636,7 +675,13 @@ dialog::backdrop {
 }
 .about h2 {
   margin: 0;
-  font-size: 52px;
+  font-size: 60px;
+}
+.about .epigraph {
+  margin: 18px 0;
+  padding: 14px 0;
+  border-top: 1px dashed var(--line-strong);
+  border-bottom: 1px dashed var(--line-strong);
 }
 .about p {
   margin: 8px 0 0;
