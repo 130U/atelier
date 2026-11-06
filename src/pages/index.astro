@@ -12,7 +12,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const site = Astro.site ?? new URL('https://www.theodoreoy.com');
 const title = 'The Étude Sky';
 const description =
-  "Chopin's twenty-four études charted as stars on the circle of fifths, with a plate drawn from each recording and an ink painting that grows as you listen. Curated by Theodore Ouyang.";
+  "Chopin's twenty-four études charted as stars on the circle of fifths, with a plate drawn from each recording and a handscroll in watercolour that unrolls as you listen. Curated by Theodore Ouyang.";
 const total = etudes.reduce((s, e) => s + e.duration, 0);
 
 // The chart: position angle is the key around the circle of fifths, C at 0°;
@@ -77,7 +77,6 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
     <main>
       <section class="hero" id="sky" aria-label="The star chart">
-        <canvas class="ink" id="ink" aria-hidden="true"></canvas>
         <div class="hero-grid">
           <figure class="chart">
             <svg id="chart" viewBox="0 0 1000 1000" role="group" aria-labelledby="chart-title">
@@ -164,7 +163,24 @@ const pad = (n: number) => String(n).padStart(2, '0');
             </article>
           </div>
         </div>
-        <p class="solar" id="solar" aria-live="off"></p>
+        <figure class="scroll" aria-labelledby="scroll-title">
+          <figcaption class="scroll-head">
+            <span id="scroll-title">Handscroll</span>
+            <span id="scroll-note"></span>
+          </figcaption>
+          <div class="scroll-paper">
+            <ol class="scroll-rows" aria-hidden="true">
+              {LETTERS.map((l, k) => (
+                <li style={`--pigment:${PIGMENTS[k]}`}><span>{l}</span></li>
+              ))}
+            </ol>
+            <div class="scroll-sheet">
+              <canvas id="scroll-a" class="on" aria-hidden="true"></canvas>
+              <canvas id="scroll-b" aria-hidden="true"></canvas>
+              <i class="playhead" id="playhead"></i>
+            </div>
+          </div>
+        </figure>
       </section>
 
       <section class="plates" id="plates" aria-labelledby="plates-title">
@@ -202,8 +218,11 @@ const pad = (n: number) => String(n).padStart(2, '0');
             by its key, and each a plate drawn from the music itself. Someone else, looking up, would see another sky.
           </p>
           <p>
-            The centre is left blank until the music begins. Each visit starts from the true solar time at which you arrive, and every note adds ink
-            to the painting in front of you, so no two are alike.
+            Beneath the chart, each étude is written out as a handscroll. Its twelve rows are the circle of fifths laid flat, and time runs from left
+            to right, as in a piano roll. Every note is a stroke of watercolour in the colour of its pitch on the wheel, pressed where the key is
+            struck and thinning as the string dies away. The scroll unrolls with the music, so each stroke appears as its note sounds; what is still
+            to come shows faintly, like the underdrawing in a copybook. A key reads as a band of neighbouring rows, and a change of key as that band
+            moving. The paper is laid by the true solar time at which you arrive, so no two visits are painted quite alike.
           </p>
           <figure class="epigraph">
             <blockquote><p>“Nature always wears the colors of the spirit.”</p></blockquote>
@@ -224,6 +243,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
             <div><dt>Ring</dt><dd>Major keys on the outer ring; each relative minor on the inner ring, at the same angle.</dd></div>
             <div><dt>Magnitude</dt><dd>The loudness of the recording on Pogson's scale, one magnitude to 4 dB. Brighter stars are drawn larger.</dd></div>
             <div><dt>Multiple stars</dt><dd>Études in the same key, drawn as one system: a triple in A minor and seven doubles.</dd></div>
+            <div><dt>Handscroll</dt><dd>A chromagram: time across, from the first note to the last; pitch class down, in the order of the circle of fifths, C at the top. Each stroke is a note, as broad as it was struck and fading as it decays. Touch the scroll to move to that moment.</dd></div>
             <div><dt>Asterisms</dt><dd>Op. 10, solid, and Op. 25, dashed, each joined in order of publication. Op. 10 is built mostly from pairs in relative keys; Op. 25 moves more often by a third.</dd></div>
           </dl>
 
