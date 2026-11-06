@@ -278,13 +278,21 @@ const pad = (n: number) => String(n).padStart(2, '0');
       <span class="time" id="time">0:00 / {clock(etudes[0].duration)}</span>
       <ol class="index" aria-label="All études">
         {[10, 25].map((op) => (
-          <li class="index-op">
-            <span>{op}</span>
-            {etudes
-              .filter((e) => e.op === op)
-              .map((e) => (
-                <button type="button" data-goto={e.id} aria-label={`Op. ${e.op}, No. ${e.no}`}>{e.no}</button>
-              ))}
+          <li class={`index-op op${op}`}>
+            <span class="index-label">Op. {op}</span>
+            <span class="index-stars">
+              {etudes
+                .filter((e) => e.op === op)
+                .map((e) => (
+                  <button
+                    type="button"
+                    data-goto={e.id}
+                    data-name={`${e.op}·${e.no} ${e.en || e.key}`}
+                    style={`--pigment:${pigment(e)}`}
+                    aria-label={`Op. ${e.op} No. ${e.no}, ${e.en ? `${e.en}, ` : ''}${e.key}`}
+                  ></button>
+                ))}
+            </span>
           </li>
         ))}
       </ol>

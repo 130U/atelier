@@ -716,36 +716,85 @@ main,
   color: var(--ink-2);
   font-variant-numeric: tabular-nums;
 }
+/* The index: each opus a string of twelve stars in its key's pigment, joined
+   as on the chart, Op. 10 solid and Op. 25 dashed. */
 .index {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
-  gap: 14px;
+  gap: 22px;
 }
 .index-op {
   display: flex;
   align-items: center;
-  gap: 1px;
+  gap: 10px;
 }
-.index-op span {
-  margin-right: 6px;
+.index-label {
+  font-size: 10px;
   color: var(--ink-3);
+  white-space: nowrap;
+}
+.index-stars {
+  position: relative;
+  display: flex;
+}
+.index-stars::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  top: 50%;
+  height: 1px;
+  background: var(--hair-2);
+}
+.op25 .index-stars::before {
+  background: repeating-linear-gradient(90deg, var(--hair-2) 0 2px, transparent 2px 4px);
 }
 .index button {
-  width: 19px;
-  height: 22px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 28px;
+}
+.index button::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pigment);
+  transition: transform 0.2s var(--ease);
+}
+.index button:hover::before {
+  transform: scale(1.4);
+}
+.index button[aria-current='true']::before {
+  box-shadow:
+    0 0 0 2px var(--paper),
+    0 0 0 3px var(--seal);
+}
+.index button::after {
+  content: attr(data-name);
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 7px;
   font-size: 10px;
-  letter-spacing: 0;
-  color: var(--ink-3);
-  border-bottom: 1px solid transparent;
-}
-.index button:hover {
+  letter-spacing: 0.06em;
+  text-transform: none;
+  white-space: nowrap;
   color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--hair);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
 }
-.index button[aria-current='true'] {
-  color: var(--seal);
-  border-bottom-color: var(--seal);
+.index button:hover::after,
+.index button:focus-visible::after {
+  opacity: 1;
 }
 .cycle {
   display: flex;
