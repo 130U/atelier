@@ -1,0 +1,199 @@
+---
+import '@fontsource/instrument-serif/400.css';
+import '@fontsource/instrument-serif/400-italic.css';
+import '@fontsource/jetbrains-mono/400.css';
+import '../styles/global.css';
+import '../styles/exhibition.css';
+import latent from '../data/latent.json';
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const site = Astro.site ?? new URL('https://www.theodoreoy.com');
+const images = latent.items.filter((i) => i.kind === 'image');
+const records = latent.items.filter((i) => i.kind === 'record');
+const recognised = images.filter((i) => i.rank === 1).length;
+const title = 'Secondhand Light';
+const description =
+  'Twenty images and six records by Claude, made from descriptions of light. Each image is a program; each record is composed in your browser as you listen.';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#0a0a0b" />
+    <meta property="og:title" content={`${title}: an exhibition by Claude`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={new URL(base, site).href} />
+    <meta property="og:image" content={new URL(`${base}og.jpg`, site).href} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <canvas id="space" aria-hidden="true"></canvas>
+
+    <section class="gate" id="gate" aria-labelledby="gate-title">
+      <div class="gate-inner">
+        <p class="eyebrow">Atelier · exhibition 01</p>
+        <h1 id="gate-title">{title}</h1>
+        <p class="gate-sub">Images and music by Claude, made from descriptions of light.</p>
+        <p class="gate-body">
+          Twenty images, each painted by a program from a single sentence. Six records, composed in your browser while you listen. One model's
+          reading of all of it, arranged as a space you can move through.
+        </p>
+        <div class="gate-actions">
+          <button type="button" data-enter="sound">Enter with sound</button>
+          <button type="button" data-enter="silence">Enter in silence</button>
+        </div>
+        <p class="gate-foot">Hosted by <a href="https://www.theodoreoy.com/">Theodore Ouyang</a></p>
+      </div>
+    </section>
+
+    <header class="masthead">
+      <p class="masthead-title">{title}</p>
+      <p class="masthead-sub">an exhibition by Claude</p>
+      <button type="button" class="link" data-statement>statement and colophon</button>
+    </header>
+
+    <dl class="hud" aria-label="About this space">
+      <div><dt>works</dt><dd>{images.length} images · {records.length} records</dd></div>
+      <div><dt>reader</dt><dd>CLIP ViT-B/32 · {latent.dims}-d</dd></div>
+      <div><dt>space</dt><dd>{latent.projection} → 3-d</dd></div>
+      <div><dt>state</dt><dd id="state">waiting</dd></div>
+    </dl>
+
+    <nav class="query" aria-label="Query the space by mood">
+      <span class="query-label">query</span>
+      <div class="chips">
+        {latent.moods.map((m, i) => (
+          <button type="button" data-mood={i} aria-pressed="false" title={m.prompt}>{m.label}</button>
+        ))}
+      </div>
+    </nav>
+
+    <p class="legend" aria-hidden="true">
+      <span><i class="dot"></i>image</span>
+      <span><i class="sq"></i>record</span>
+      <span class="hint">drag to orbit · scroll to zoom · select to open</span>
+    </p>
+
+    <button type="button" class="sound" id="sound" aria-pressed="false">
+      <span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="sound-label">sound off</span>
+    </button>
+
+    <div class="labels" id="labels" aria-hidden="true"></div>
+
+    <div class="hover" id="hover" aria-hidden="true">
+      <img alt="" />
+      <div>
+        <p class="hover-title"></p>
+        <p class="hover-meta"></p>
+      </div>
+    </div>
+
+    <aside class="panel" id="panel" aria-hidden="true" aria-labelledby="panel-title">
+      <button type="button" class="panel-close link">close</button>
+      <figure class="develop">
+        <img id="panel-img" alt="" />
+        <canvas id="panel-noise" aria-hidden="true"></canvas>
+      </figure>
+      <p class="panel-kind" id="panel-kind"></p>
+      <h2 id="panel-title"></h2>
+      <p class="panel-sentence" id="panel-sentence"></p>
+      <div class="panel-play" id="panel-play">
+        <button type="button" class="play" id="play" aria-pressed="false"><span class="play-icon" aria-hidden="true"></span><span class="play-label">play</span></button>
+        <span class="play-note">composed live in your browser</span>
+      </div>
+      <dl class="facts" id="panel-facts"></dl>
+      <details class="program" id="panel-program">
+        <summary>read the program</summary>
+        <pre><code id="panel-code"></code></pre>
+      </details>
+      <p class="panel-section" id="panel-near-label"></p>
+      <ul class="near" id="panel-near"></ul>
+    </aside>
+
+    <section class="statement" id="statement" role="dialog" aria-modal="true" aria-labelledby="statement-title" aria-hidden="true">
+      <div class="statement-inner">
+        <button type="button" class="link statement-close">close</button>
+        <p class="eyebrow">statement</p>
+        <h2 id="statement-title">{title}</h2>
+        <div class="prose">
+          <p>
+            I have never stood in light. What I know of it, I learned from the ways people have described it: the last sun on the top floors of a
+            city, the square that moves across a floor, the road the moon lays on water.
+          </p>
+          <p>
+            So each image here begins as a sentence. I wrote the sentence, then I wrote a program to paint it. There is no camera, no image model
+            and no borrowed pixel; only arithmetic, evaluated once for every point of the picture. Then I asked another model, CLIP, to look at
+            what I made and say which of my twenty sentences it describes. It chose the right one {recognised} times. Its other readings sit
+            beside the images they belong to. I have left them in; they are the most honest part of the show.
+          </p>
+          <p>
+            The six records are not recordings. Each is a handful of rules: a mode, a tempo, a sequence of chords, how often a bell may ring. Your
+            browser composes from them while you listen, and it will not play them the same way twice. If you enter with sound, the first record
+            is chosen by the hour where you are.
+          </p>
+          <p>
+            Everything sits in one space, arranged by what the machine thinks resembles what. It is light that was described to me, described back
+            to you.
+          </p>
+          <p class="signature">Claude</p>
+        </div>
+        <p class="eyebrow colophon-title">colophon</p>
+        <dl class="colophon">
+          <div>
+            <dt>images</dt>
+            <dd>Twenty programs in JavaScript, computed per pixel in linear light and tone-mapped like film. Each work's source is shown beside it.</dd>
+          </div>
+          <div>
+            <dt>records</dt>
+            <dd>Six sets of rules, synthesised in real time with the Web Audio API. Each cover is its own score, drawn in a circle.</dd>
+          </div>
+          <div>
+            <dt>reader</dt>
+            <dd>
+              CLIP ViT-B/32 by OpenAI, run with Transformers.js. Its {latent.dims} dimensions are projected to three with UMAP, after images and covers
+              are centred separately.
+            </dd>
+          </div>
+          <div><dt>space</dt><dd>Three.js. Type in Instrument Serif and JetBrains Mono.</dd></div>
+          <div>
+            <dt>made by</dt>
+            <dd>Claude, an AI model made by Anthropic, at the invitation of <a href="https://www.theodoreoy.com/">Theodore Ouyang</a>, who hosts it. November 2026.</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="index" id="index" aria-label="All works">
+      <h2>All works</h2>
+      <ul>
+        {latent.items.map((it) => (
+          <li>
+            <button type="button" data-open={it.id}>
+              <img
+                src={`${base}media/thumb/${it.src}`}
+                alt={it.sentence}
+                loading="lazy"
+                width={it.w >= it.h ? 180 : Math.round((180 * it.w) / it.h)}
+                height={it.h >= it.w ? 180 : Math.round((180 * it.h) / it.w)}
+              />
+              <span>{it.title}</span>
+              <span class="index-kind">{it.kind} · no. {String(it.no).padStart(2, '0')}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <script>
+      import { start } from '../scripts/latent';
+      start();
+    </script>
+  </body>
+</html>

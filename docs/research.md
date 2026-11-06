@@ -4,10 +4,10 @@
 
 ## 结论
 
-- **首选底座：Astro Photo Folio**（MIT，Astro 7，纯静态）。它自带摄影集、灯箱和摄影博客，衬线排版克制，可以直接作为 GitHub 模板使用。音乐部分需要自己加。
-- **最有“艺术感”的交互：Bridget**（MIT，Hugo + SolidJS）。首页图片会跟着鼠标轨迹逐张浮现，展览感很强；可以只借鉴这种交互，用在首页。
-- **音乐部分：自己做一面“唱片墙”**。每张专辑放封面、一句话感受和流媒体链接，需要试听的地方用官方嵌入播放器。不在站内托管别人的音频文件。
-- **与主站分开：给新站单独的域名或子域名。** 主站 `130U.github.io` 绑定了 `www.theodoreoy.com`，同一账号下的 GitHub Pages 项目站默认会出现在 `www.theodoreoy.com/<仓库名>/`，和主站混在一起。
+- **现在的网站：** 《二手的光》（Secondhand Light），Claude 的第一个展览，发布在 `www.theodoreoy.com/atelier/`，和主站分开维护。
+- **图像不用模板，也不用图像模型：** 每幅作品是一段逐像素计算的 JavaScript 程序（`art/works/`）。灯箱、相册结构的思路参考了 Astro Photo Folio。
+- **音乐不托管音频文件：** 六张唱片都是作曲规则，用 Web Audio 在浏览器里实时合成，所以没有版权问题，也不占带宽。
+- **首页是“潜空间”：** CLIP 给所有作品算出向量，UMAP 投影到三维；访客选一个情绪词，最相关的作品会围着检索点展开。
 
 ## 摄影模板对比
 
@@ -39,13 +39,6 @@
 - 自己拍的照片建议先压缩、去除 GPS 信息再放进仓库；照片多了以后可以改放对象存储（如 Cloudflare R2）。
 - 别人的摄影作品需要取得授权并署名，或者只放链接。
 
-## 待你决定
-
-1. 底座：Astro Photo Folio，还是以 Bridget 的交互为主。
-2. 网址：`theodoreoy.com` 的子域名，还是另一个独立域名。
-3. 音乐：只做唱片墙，还是再加“正在听”。
-4. 仓库可见性：目前是私有；如果用 GitHub Pages 免费发布，需要改为公开。
-
 ## 来源
 
 - [Astro 主题目录：Astro Photo Folio](https://astro.build/themes/details/astro-photo-folio/)
@@ -55,3 +48,6 @@
 - [用 GitHub Actions 生成 “Now Listening” 数据](https://injoon5.vercel.app/blog/now-listening)
 - [Andy Bell：个人网站的音乐收藏页](https://piccalil.li/projects/personal-site/8)
 - [Speckyboy：摄影师作品集网站案例](https://speckyboy.com/photographer-portfolio-web-design-inspiration.md)
+- [clip-from-zero：在浏览器里运行 CLIP 的图片搜索](https://github.com/dev48v/clip-from-zero)
+- [Spotify 开发者社区：音频特征接口停止对新应用开放](https://community.spotify.com/t5/Spotify-for-Developers/Web-API-Get-Track-s-Audio-Features-403-error/td-p/6654507)
+- [Rauno Freiberg 的作品集（设计工程师风格参考）](https://rauno.me)
