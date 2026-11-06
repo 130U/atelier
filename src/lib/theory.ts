@@ -10,8 +10,7 @@ export interface Etude {
   mode: 'major' | 'minor';
   key: string;
   tempo: string;
-  en: string;
-  zh: string;
+  en: string;
   duration: number;
   onsets: number;
   magnitude: number;

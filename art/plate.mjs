@@ -29,10 +29,10 @@ export const keyIndex = (e) => fifths(e.mode === 'major' ? e.tonic : (e.tonic + 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const font = (p) => opentype.parse(fs.readFileSync(path.join(root, 'node_modules', '@fontsource', p)).buffer.slice(0));
 const FONTS = {
-  serif: font('cormorant-garamond/files/cormorant-garamond-latin-500-normal.woff'),
-  italic: font('cormorant-garamond/files/cormorant-garamond-latin-400-italic.woff'),
-  hand: font('reenie-beanie/files/reenie-beanie-latin-400-normal.woff'),
-  mono: font('jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff'),
+  serif: font('newsreader/files/newsreader-latin-500-normal.woff'),
+  italic: font('newsreader/files/newsreader-latin-400-italic.woff'),
+  hand: font('nothing-you-could-do/files/nothing-you-could-do-latin-400-normal.woff'),
+  mono: font('ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff'),
 };
 
 // Text as outlines, so the plate carries its own type. Sharps and flats are
@@ -254,7 +254,7 @@ export function plateSvg(e, data, catalogue) {
   parts.push(text(`OP. ${e.op} · NO. ${e.no}`, m, m + 20, 21, { face: 'mono', spacing: 2, opacity: 0.8 }));
   parts.push(text(e.key, m, m + 66, 34, { face: 'serif' }));
   parts.push(text(e.tempo, m, m + 104, 27, { face: 'italic', opacity: 0.75 }));
-  parts.push(text(e.en || e.key, m - 4, S - m - 8, 92, { face: 'hand' }));
+  parts.push(text(e.en || e.key, m - 2, S - m - 10, 70, { face: 'hand' }));
   const minutes = Math.floor(data.duration / 60);
   const seconds = String(Math.round(data.duration % 60)).padStart(2, '0');
   const lines = [`MAG ${catalogue.magnitude.toFixed(1)}`, `${minutes}:${seconds}`, `${data.onsets.length / 3} ONSETS`];

@@ -16,9 +16,9 @@
     "og": "node scripts/og.mjs"
   },
   "dependencies": {
-    "@fontsource/cormorant-garamond": "5.3.0",
-    "@fontsource/jetbrains-mono": "5.3.0",
-    "@fontsource/reenie-beanie": "5.3.0",
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "@fontsource/newsreader": "5.3.0",
+    "@fontsource/nothing-you-could-do": "5.3.0",
     "astro": "7.4.2"
   },
   "devDependencies": {
