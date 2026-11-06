@@ -1,7 +1,7 @@
 // Turns each recording in .cache/recordings into what the site uses:
 //   public/audio/<id>.mp3     trimmed, loudness-matched, 128 kbit/s
 //   public/data/<id>.json     onsets with their pitch classes, and loudness
-//   src/data/recordings.json  durations for the star chart
+//   src/data/recordings.json  duration, onset count and loudness for the chart
 // Pitch classes come from a chromagram; onsets from spectral flux.
 import fs from 'node:fs/promises';
 import os from 'node:os';
@@ -222,6 +222,7 @@ async function processOne(id) {
     id,
     duration: Math.round((len / sr) * 100) / 100,
     gainDb: Math.round(gainDb * 10) / 10,
+    loudnessDb: Math.round(integrated * 10) / 10,
     profile: [...profile].map((v) => Math.round((v / pmax) * 1000) / 1000),
     onsets,
     loud,
@@ -260,7 +261,7 @@ if (!isMainThread) {
   const summary = {};
   for (const f of (await fs.readdir(dataDir)).filter((n) => n.endsWith('.json')).sort()) {
     const d = JSON.parse(await fs.readFile(path.join(dataDir, f), 'utf8'));
-    summary[d.id] = { duration: d.duration, onsets: d.onsets.length / 3 };
+    summary[d.id] = { duration: d.duration, onsets: d.onsets.length / 3, loudnessDb: d.loudnessDb };
   }
   await fs.writeFile(summaryFile, `${JSON.stringify(summary, null, 2)}\n`);
   for (const r of results) console.log(`${r.id}  ${r.duration.toFixed(1)}s  gain ${r.gainDb} dB  ${r.onsets} onsets  ${(r.mp3 / 1e6).toFixed(1)} MB`);

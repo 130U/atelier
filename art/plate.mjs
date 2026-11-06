@@ -1,30 +1,69 @@
-// One plate per étude, all drawn by the same rules:
-//   angle    the pitch class, placed on the circle of fifths
-//   radius   time, from the centre outwards
-//   star     an onset; its size is how hard the note was struck
-//   wash     watercolour in the colour of the key, as deep as the music is loud
-//            and as wide as the key's pitches spread around the circle
-//   gold     the strongest onsets, each joined to its nearest: the étude's constellation
+// One plate per étude, all drawn by the same rules, as a polar plot of the
+// recording set inside a gilded astrolabe ring:
+//   position angle  pitch class, on the circle of fifths, C at the top
+//   radial distance elapsed time, centre to rim
+//   point           a note onset; larger the stronger the attack
+//   nebula          each pitch class in its own pigment from the colour wheel,
+//                   laid where and when it sounds, deeper as the music is louder
+//   gold            the strongest onsets, joined by a minimum spanning tree
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import opentype from 'opentype.js';
 import { TAU, clamp, smoothstep, hash, noise, fbm, len, hex } from './lib.mjs';
 import palette from '../src/data/palette.json' with { type: 'json' };
 
 export const SIZE = 1500;
-export const R0 = 0.06;
-export const R1 = 0.395;
+export const R0 = 0.05;
+export const R1 = 0.335;
+const BAND_IN = 0.352;
+const BAND_OUT = 0.412;
 export const INK = '#1f2747';
-export const GOLD = '#b8862b';
+export const GOLD = '#a8781f';
 export const LETTERS = palette.letters;
-
-// The circle of fifths doubles as a colour wheel of watercolour pigments.
 export const PIGMENTS = palette.pigments;
 
 export const fifths = (pc) => (pc * 7) % 12;
 export const keyIndex = (e) => fifths(e.mode === 'major' ? e.tonic : (e.tonic + 3) % 12);
-export const pigmentHex = (e) => PIGMENTS[keyIndex(e)];
 
-// A minor key shares its relative major's angle, so it shares its pigment;
-// it is laid on a little more densely.
-const pigment = (e) => hex(pigmentHex(e));
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const font = (p) => opentype.parse(fs.readFileSync(path.join(root, 'node_modules', '@fontsource', p)).buffer.slice(0));
+const FONTS = {
+  serif: font('cormorant-garamond/files/cormorant-garamond-latin-500-normal.woff'),
+  italic: font('cormorant-garamond/files/cormorant-garamond-latin-400-italic.woff'),
+  hand: font('reenie-beanie/files/reenie-beanie-latin-400-normal.woff'),
+  mono: font('jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff'),
+};
+
+// Text as outlines, so the plate carries its own type. Sharps and flats are
+// drawn by hand, since the fonts do not include them.
+export function text(str, x, y, size, { face = 'serif', anchor = 'start', fill = INK, opacity = 1, spacing = 0 } = {}) {
+  const f = FONTS[face];
+  const parts = [];
+  let width = 0;
+  for (const ch of str) width += ch === '♯' || ch === '♭' ? size * 0.42 : f.getAdvanceWidth(ch, size) + spacing;
+  let cx = anchor === 'middle' ? x - width / 2 : anchor === 'end' ? x - width : x;
+  const strokes = [];
+  for (const ch of str) {
+    const s = size;
+    if (ch === '♯') {
+      strokes.push(
+        `M${cx + s * 0.12} ${y - s * 0.66}V${y + s * 0.08}M${cx + s * 0.28} ${y - s * 0.72}V${y + s * 0.02}M${cx + 0.02 * s} ${y - s * 0.38}L${cx + s * 0.38} ${y - s * 0.46}M${cx + 0.02 * s} ${y - s * 0.16}L${cx + s * 0.38} ${y - s * 0.24}`,
+      );
+      cx += s * 0.42;
+    } else if (ch === '♭') {
+      strokes.push(`M${cx + s * 0.08} ${y - s * 0.78}V${y}M${cx + s * 0.08} ${y - s * 0.3}C${cx + s * 0.36} ${y - s * 0.48} ${cx + s * 0.44} ${y - s * 0.16} ${cx + s * 0.08} ${y}`);
+      cx += s * 0.42;
+    } else {
+      // opentype.js returns NaN for coordinates carrying float noise, so round first.
+      parts.push(f.getPath(ch, Math.round(cx * 100) / 100, Math.round(y * 100) / 100, size).toPathData(2));
+      cx += f.getAdvanceWidth(ch, size) + spacing;
+    }
+  }
+  const out = [`<path d="${parts.join(' ')}" fill="${fill}" fill-opacity="${opacity}"/>`];
+  if (strokes.length) out.push(`<path d="${strokes.join(' ')}" fill="none" stroke="${fill}" stroke-opacity="${opacity}" stroke-width="${(size * 0.065).toFixed(2)}" stroke-linecap="round"/>`);
+  return out.join('');
+}
 
 export function stars(data) {
   const out = [];
@@ -43,99 +82,144 @@ export function stars(data) {
 }
 
 export function plateWork(e, data) {
-  const absorb = pigment(e).map((v) => -Math.log(Math.max(0.03, v)));
-  const indigo = hex('#2b3a78').map((v) => -Math.log(v));
-  const paper = hex('#f7f0e3');
-  // Loudness smoothed over about two seconds, so the wash swells rather than steps.
-  const raw = data.loud;
-  const loud = raw.map((_, i) => {
-    let s = 0;
-    let w = 0;
-    for (let k = -4; k <= 4; k++) {
-      const v = raw[i + k];
-      if (v === undefined) continue;
-      const g = Math.exp(-(k * k) / 8);
-      s += v * g;
-      w += g;
-    }
-    return s / w;
-  });
-  const n = loud.length;
-  const density = e.mode === 'minor' ? 1.25 : 1;
-  const loudAt = (t) => {
-    const f = clamp(t) * (n - 1);
-    const i = Math.floor(f);
-    const a = loud[i] ?? 0;
-    const b = loud[Math.min(n - 1, i + 1)] ?? a;
-    return (a + (b - a) * (f - i)) / 99;
-  };
-  const spread = new Float64Array(12);
-  data.profile.forEach((v, pc) => (spread[fifths(pc)] = v));
-  const around = (theta) => {
-    const f = (((theta / TAU) * 12) % 12 + 12) % 12;
-    const i = Math.floor(f);
-    const s = smoothstep(0, 1, f - i);
-    return spread[i] * (1 - s) + spread[(i + 1) % 12] * s;
-  };
+  const absorbOf = (h) => hex(h).map((v) => -Math.log(Math.max(0.03, v)));
+  const pcAbsorb = Array.from({ length: 12 }, (_, pc) => absorbOf(PIGMENTS[fifths(pc)]));
+  const keyAbsorb = absorbOf(PIGMENTS[keyIndex(e)]);
+  const paper = hex('#f8f1e2');
+  const goldLo = hex('#a9772a');
+  const goldHi = hex('#f6dc95');
 
   return {
     size: [SIZE, SIZE],
-    look: { tone: 'paper', grain: 0.018, vignette: 0.12 },
-    shade(x, y) {
-      let c = paper.map((v) => v * (0.975 + 0.025 * fbm(x * 70, y * 70, 3) + 0.012 * noise(x * 420, y * 34)));
-      const r = len(x, y);
-      let theta = Math.atan2(x, y) + 0.22 * fbm(x * 2.6 + 4, y * 2.6, 3);
-      const t = (r + 0.02 * fbm(x * 5 + 3, y * 5, 4) - R0) / (R1 - R0);
-      const inside = smoothstep(-0.06, 0.03, t) * smoothstep(1.06, 0.95, t);
-      if (inside > 0) {
-        const body = 0.1 + 0.95 * loudAt(t) ** 1.5;
-        const reach = 0.18 + 0.82 * around(theta) ** 2.4;
-        const granulation = 0.82 + 0.36 * noise(x * 300, y * 300);
-        const bloom = 0.7 + 0.6 * fbm(x * 3.6 + 7, y * 3.6 - 2, 5);
-        const d = inside * body * reach * granulation * bloom;
-        const edge = smoothstep(0.25, 0.42, d) * smoothstep(0.62, 0.45, d) * 0.35;
-        c = c.map((v, k) => v * Math.exp(-absorb[k] * (d + edge) * 1.5 * density));
+    look: { tone: 'paper', grain: 0.016, vignette: 0.16 },
+    // When and where each pitch class sounds: 120 time bins by 12 classes,
+    // smoothed, with the loudness envelope alongside.
+    prepare() {
+      const B = 120;
+      const grid = Array.from({ length: B }, () => new Float64Array(12));
+      const o = data.onsets;
+      for (let i = 0; i < o.length; i += 3) {
+        const b = Math.min(B - 1, Math.floor((o[i] / 100 / data.duration) * B));
+        for (let pc = 0; pc < 12; pc++) if (o[i + 2] & (1 << pc)) grid[b][pc] += 0.3 + o[i + 1] / 99;
       }
-      const halo = smoothstep(0.36, 0.44, r) * smoothstep(0.5, 0.44, r) * 0.06 * (0.5 + fbm(x * 5, y * 5, 3));
-      return c.map((v, k) => v * Math.exp(-indigo[k] * halo));
+      const smooth = grid.map((_, b) => {
+        const acc = new Float64Array(12);
+        for (let k = -3; k <= 3; k++) {
+          const row = grid[b + k];
+          if (!row) continue;
+          const w = Math.exp(-(k * k) / 4.5);
+          for (let pc = 0; pc < 12; pc++) acc[pc] += row[pc] * w;
+        }
+        return acc;
+      });
+      let max = 0;
+      for (const row of smooth) for (const v of row) max = Math.max(max, v);
+      const loud = data.loud;
+      const loudAt = (t) => {
+        const f = clamp(t) * (loud.length - 1);
+        const i = Math.floor(f);
+        const a = loud[i] ?? 0;
+        return (a + ((loud[Math.min(loud.length - 1, i + 1)] ?? a) - a) * (f - i)) / 99;
+      };
+      return { grid: smooth.map((row) => row.map((v) => v / max)), B, loudAt };
+    },
+    shade(x, y, u, v, px, { grid, B, loudAt }) {
+      let c = paper.map((p) => p * (0.972 + 0.028 * fbm(x * 70, y * 70, 3) + 0.012 * noise(x * 440, y * 36)));
+      const r = len(x, y);
+
+      // The gilded ring: hammered leaf catching the light unevenly.
+      if (r > BAND_IN - 0.002 && r < BAND_OUT + 0.002) {
+        const a = Math.atan2(x, y);
+        const shine = 0.5 + 0.4 * Math.cos(2 * a - 0.9) + 0.25 * fbm(x * 40, y * 40, 3);
+        const gold = goldLo.map((g, k) => g + (goldHi[k] - g) * clamp(shine));
+        const edge = smoothstep(BAND_IN - 0.002, BAND_IN + 0.0015, r) * smoothstep(BAND_OUT + 0.002, BAND_OUT - 0.0015, r);
+        return c.map((p, k) => p + (gold[k] - p) * edge);
+      }
+
+      // A faint wash of the key's own colour over the whole field.
+      const field = smoothstep(BAND_IN + 0.01, BAND_IN - 0.05, r) * 0.1 * (0.7 + 0.6 * fbm(x * 3, y * 3, 4));
+      c = c.map((p, k) => p * Math.exp(-keyAbsorb[k] * field));
+
+      const theta = Math.atan2(x, y) + 0.12 * fbm(x * 3 + 4, y * 3, 3);
+      const t = (r + 0.015 * fbm(x * 6 + 3, y * 6, 4) - R0) / (R1 - R0);
+      const inside = smoothstep(-0.05, 0.03, t) * smoothstep(1.05, 0.96, t);
+      if (inside > 0) {
+        const f = clamp(t) * (B - 1);
+        const b0 = Math.floor(f);
+        const fr = f - b0;
+        const row0 = grid[b0];
+        const row1 = grid[Math.min(B - 1, b0 + 1)];
+        const body = 0.35 + 0.9 * loudAt(t) ** 1.2;
+        const granulation = 0.8 + 0.4 * noise(x * 320, y * 320);
+        const bloom = 0.65 + 0.7 * fbm(x * 4 + 7, y * 4 - 2, 5);
+        const absorb = [0, 0, 0];
+        for (let pc = 0; pc < 12; pc++) {
+          const amount = row0[pc] * (1 - fr) + row1[pc] * fr;
+          if (amount < 0.01) continue;
+          let d = theta - (fifths(pc) / 12) * TAU;
+          d = Math.atan2(Math.sin(d), Math.cos(d));
+          const spread = 0.34 + 0.12 * fbm(x * 2 + pc, y * 2, 2);
+          const k = Math.exp(-((d / spread) ** 2)) * amount ** 0.8;
+          for (let ch = 0; ch < 3; ch++) absorb[ch] += pcAbsorb[pc][ch] * k;
+        }
+        const depth = inside * body * granulation * bloom * 1.25;
+        c = c.map((p, ch) => p * Math.exp(-absorb[ch] * depth));
+      }
+      return c;
     },
   };
 }
 
-// The ink and gold drawn over the wash, as SVG for clean lines.
-export function plateSvg(e, data) {
+// Ink, gold and lettering drawn over the paint.
+export function plateSvg(e, data, catalogue) {
   const S = SIZE;
-  const px = (v) => (v * S).toFixed(1);
-  const X = (x) => ((x + 0.5) * S).toFixed(1);
-  const Y = (y) => ((0.5 - y) * S).toFixed(1);
-  const all = stars(data);
+  const X = (x) => +((x + 0.5) * S).toFixed(1);
+  const Y = (y) => +((0.5 - y) * S).toFixed(1);
+  const R = (r) => +(r * S).toFixed(1);
+  const C = S / 2;
+  const at = (a, r) => [X(Math.sin(a) * r), Y(Math.cos(a) * r)];
   const parts = [];
 
-  parts.push(`<circle cx="${S / 2}" cy="${S / 2}" r="${px(R1 + 0.022)}" fill="none" stroke="${INK}" stroke-opacity="0.55" stroke-width="1.2"/>`);
-  parts.push(`<circle cx="${S / 2}" cy="${S / 2}" r="${px(R1 + 0.03)}" fill="none" stroke="${INK}" stroke-opacity="0.35" stroke-width="0.7"/>`);
+  // Rings and graduation, as on an astrolabe: five divisions to each key.
+  for (const [r, w, o] of [
+    [BAND_IN, 1.4, 0.75],
+    [BAND_OUT, 1.4, 0.75],
+    [BAND_OUT + 0.012, 0.8, 0.5],
+    [R1 + 0.004, 0.9, 0.35],
+  ])
+    parts.push(`<circle cx="${C}" cy="${C}" r="${R(r)}" fill="none" stroke="${INK}" stroke-opacity="${o}" stroke-width="${w}"/>`);
+  for (let k = 0; k < 60; k++) {
+    const a = (k / 60) * TAU;
+    const major = k % 5 === 0;
+    const [x1, y1] = at(a, BAND_OUT);
+    const [x2, y2] = at(a, BAND_OUT - (major ? 0.02 : 0.009));
+    parts.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${INK}" stroke-opacity="${major ? 0.85 : 0.55}" stroke-width="${major ? 1.6 : 0.9}"/>`);
+  }
   for (let k = 0; k < 12; k++) {
     const a = (k / 12) * TAU;
-    const sx = Math.sin(a);
-    const sy = Math.cos(a);
-    parts.push(`<line x1="${X(sx * R0 * 0.8)}" y1="${Y(sy * R0 * 0.8)}" x2="${X(sx * (R1 + 0.022))}" y2="${Y(sy * (R1 + 0.022))}" stroke="${INK}" stroke-opacity="0.1" stroke-width="0.8"/>`);
-    parts.push(`<line x1="${X(sx * (R1 + 0.022))}" y1="${Y(sy * (R1 + 0.022))}" x2="${X(sx * (R1 + 0.038))}" y2="${Y(sy * (R1 + 0.038))}" stroke="${INK}" stroke-opacity="0.6" stroke-width="1.2"/>`);
-    parts.push(`<text x="${X(sx * (R1 + 0.066))}" y="${Y(sy * (R1 + 0.066))}" dy="0.35em" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="27" fill="${INK}" fill-opacity="0.78">${LETTERS[k]}</text>`);
+    const [lx, ly] = at(a, (BAND_IN + BAND_OUT) / 2 - 0.004);
+    parts.push(text(LETTERS[k], lx, ly + 11, 31, { face: 'serif', anchor: 'middle' }));
+    const [sx, sy] = at(a, R0 * 0.85);
+    const [ex, ey] = at(a, R1);
+    parts.push(`<line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" stroke="${INK}" stroke-opacity="0.09" stroke-width="0.9"/>`);
   }
+
+  // Time, every thirty seconds.
   for (let sec = 30; sec < data.duration; sec += 30) {
     const r = R0 + ((R1 - R0) * sec) / data.duration;
-    parts.push(`<circle cx="${S / 2}" cy="${S / 2}" r="${px(r)}" fill="none" stroke="${INK}" stroke-opacity="0.13" stroke-width="0.8" stroke-dasharray="2 6"/>`);
-    const a = (0.5 / 12) * TAU;
-    parts.push(`<text x="${X(Math.sin(a) * r)}" y="${Y(Math.cos(a) * r)}" dx="6" dy="-4" font-family="Georgia, serif" font-style="italic" font-size="15" fill="${INK}" fill-opacity="0.45">${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}</text>`);
+    parts.push(`<circle cx="${C}" cy="${C}" r="${R(r)}" fill="none" stroke="${INK}" stroke-opacity="0.14" stroke-width="0.8" stroke-dasharray="1.5 6"/>`);
+    const [tx, ty] = at((0.5 / 12) * TAU, r);
+    parts.push(text(`${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`, tx + 5, ty - 4, 17, { face: 'italic', opacity: 0.55 }));
   }
 
+  // Every onset as a point; the strongest as stars with diffraction spikes.
+  const all = stars(data);
   for (const s of all) {
-    const rad = 0.9 + 4.2 * s.s ** 1.3;
-    parts.push(`<circle cx="${X(s.x)}" cy="${Y(s.y)}" r="${rad.toFixed(2)}" fill="${INK}" fill-opacity="${(0.42 + 0.5 * s.s).toFixed(2)}"/>`);
+    const rad = 0.8 + 3.8 * s.s ** 1.35;
+    parts.push(`<circle cx="${X(s.x)}" cy="${Y(s.y)}" r="${rad.toFixed(2)}" fill="${INK}" fill-opacity="${(0.4 + 0.5 * s.s).toFixed(2)}"/>`);
   }
-
   const ranked = [...all].sort((a, b) => b.s - a.s);
   const bright = ranked.slice(0, Math.max(14, Math.round(all.length * 0.022))).sort((a, b) => a.t - b.t);
-  // A minimum spanning tree over the brightest stars: every star joined, no line crossing the sky for nothing.
   const linked = [0];
   const rest = new Set(bright.map((_, i) => i).slice(1));
   while (rest.size) {
@@ -145,25 +229,58 @@ export function plateSvg(e, data) {
         const d = Math.hypot(bright[a].x - bright[b].x, bright[a].y - bright[b].y);
         if (!best || d < best[2]) best = [a, b, d];
       }
-    parts.push(`<line x1="${X(bright[best[0]].x)}" y1="${Y(bright[best[0]].y)}" x2="${X(bright[best[1]].x)}" y2="${Y(bright[best[1]].y)}" stroke="${GOLD}" stroke-opacity="0.6" stroke-width="1.2"/>`);
+    parts.push(`<line x1="${X(bright[best[0]].x)}" y1="${Y(bright[best[0]].y)}" x2="${X(bright[best[1]].x)}" y2="${Y(bright[best[1]].y)}" stroke="${GOLD}" stroke-opacity="0.7" stroke-width="1.3"/>`);
     linked.push(best[1]);
     rest.delete(best[1]);
   }
   for (const s of bright) {
-    const r = 9 + 10 * s.s;
-    const cx = Number(X(s.x));
-    const cy = Number(Y(s.y));
-    parts.push(`<circle cx="${cx}" cy="${cy}" r="${(r * 1.9).toFixed(1)}" fill="url(#glow)"/>`);
+    const r = 10 + 12 * s.s;
+    const cx = X(s.x);
+    const cy = Y(s.y);
+    parts.push(`<circle cx="${cx}" cy="${cy}" r="${(r * 2.2).toFixed(1)}" fill="url(#glow)"/>`);
+    parts.push(`<path d="M${cx - r * 2.4} ${cy}H${cx + r * 2.4}M${cx} ${cy - r * 2.4}V${cy + r * 2.4}" stroke="${GOLD}" stroke-opacity="0.45" stroke-width="0.8"/>`);
     parts.push(
-      `<path d="M${cx} ${cy - r} Q${cx} ${cy} ${cx + r * 0.32} ${cy} Q${cx} ${cy} ${cx} ${cy + r} Q${cx} ${cy} ${cx - r * 0.32} ${cy} Q${cx} ${cy} ${cx} ${cy - r}Z M${cx - r * 0.7} ${cy} Q${cx} ${cy} ${cx} ${cy - r * 0.22} Q${cx} ${cy} ${cx + r * 0.7} ${cy} Q${cx} ${cy} ${cx} ${cy + r * 0.22} Q${cx} ${cy} ${cx - r * 0.7} ${cy}Z" fill="${GOLD}"/>`,
+      `<path d="M${cx} ${cy - r}Q${cx} ${cy} ${cx + r * 0.3} ${cy}Q${cx} ${cy} ${cx} ${cy + r}Q${cx} ${cy} ${cx - r * 0.3} ${cy}Q${cx} ${cy} ${cx} ${cy - r}ZM${cx - r * 0.66} ${cy}Q${cx} ${cy} ${cx} ${cy - r * 0.2}Q${cx} ${cy} ${cx + r * 0.66} ${cy}Q${cx} ${cy} ${cx} ${cy + r * 0.2}Q${cx} ${cy} ${cx - r * 0.66} ${cy}Z" fill="url(#leaf)" stroke="${GOLD}" stroke-width="0.6"/>`,
     );
+    parts.push(`<circle cx="${cx}" cy="${cy}" r="${(r * 0.12).toFixed(1)}" fill="#fff8e6"/>`);
   }
 
-  parts.push(`<circle cx="${S / 2}" cy="${S / 2}" r="${px(R0 * 0.62)}" fill="#f7f0e3" stroke="${INK}" stroke-opacity="0.5" stroke-width="1"/>`);
-  parts.push(`<text x="${S / 2}" y="${S / 2}" dy="0.36em" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="25" fill="${INK}">${e.op}·${e.no}</text>`);
+  // The centre: a small gilded boss with the catalogue number.
+  parts.push(`<circle cx="${C}" cy="${C}" r="${R(R0 * 0.66)}" fill="url(#leaf)" stroke="${INK}" stroke-opacity="0.6" stroke-width="1"/>`);
+  parts.push(text(`${e.op}·${e.no}`, C, C + 9, 27, { face: 'italic', anchor: 'middle' }));
+
+  // Corners, as on an atlas plate.
+  const m = 70;
+  parts.push(text(`OP. ${e.op} · NO. ${e.no}`, m, m + 20, 21, { face: 'mono', spacing: 2, opacity: 0.8 }));
+  parts.push(text(e.key, m, m + 66, 34, { face: 'serif' }));
+  parts.push(text(e.tempo, m, m + 104, 27, { face: 'italic', opacity: 0.75 }));
+  parts.push(text(e.en || e.key, m - 4, S - m - 8, 92, { face: 'hand' }));
+  const minutes = Math.floor(data.duration / 60);
+  const seconds = String(Math.round(data.duration % 60)).padStart(2, '0');
+  const lines = [`MAG ${catalogue.magnitude.toFixed(1)}`, `${minutes}:${seconds}`, `${data.onsets.length / 3} ONSETS`];
+  lines.forEach((line, i) => parts.push(text(line, S - m, S - m - 8 - (lines.length - 1 - i) * 32, 19, { face: 'mono', anchor: 'end', spacing: 1.5, opacity: 0.75 })));
+
+  // A small rose at the top right: north is C.
+  const rx = S - m - 34;
+  const ry = m + 40;
+  const rose = [];
+  for (let k = 0; k < 8; k++) {
+    const a = (k / 8) * TAU;
+    const long = k % 2 === 0 ? 34 : 18;
+    const l = a - 0.32;
+    const rr = a + 0.32;
+    rose.push(
+      `M${rx} ${ry}L${(rx + Math.sin(l) * 7).toFixed(1)} ${(ry - Math.cos(l) * 7).toFixed(1)}L${(rx + Math.sin(a) * long).toFixed(1)} ${(ry - Math.cos(a) * long).toFixed(1)}L${(rx + Math.sin(rr) * 7).toFixed(1)} ${(ry - Math.cos(rr) * 7).toFixed(1)}Z`,
+    );
+  }
+  parts.push(`<path d="${rose.join('')}" fill="url(#leaf)" stroke="${INK}" stroke-width="0.8" stroke-opacity="0.7"/>`);
+  parts.push(text('C', rx, ry - 44, 22, { face: 'serif', anchor: 'middle', opacity: 0.8 }));
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">
-  <defs><radialGradient id="glow"><stop offset="0" stop-color="${GOLD}" stop-opacity="0.38"/><stop offset="1" stop-color="${GOLD}" stop-opacity="0"/></radialGradient></defs>
+  <defs>
+    <radialGradient id="glow"><stop offset="0" stop-color="#e9b24a" stop-opacity="0.45"/><stop offset="1" stop-color="#e9b24a" stop-opacity="0"/></radialGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7dd96"/><stop offset="0.5" stop-color="#c9963a"/><stop offset="1" stop-color="#f0cf7a"/></linearGradient>
+  </defs>
   ${parts.join('\n  ')}
 </svg>`;
 }

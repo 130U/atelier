@@ -13,11 +13,24 @@ export interface Etude {
   en: string;
   zh: string;
   duration: number;
+  onsets: number;
+  magnitude: number;
 }
 
+type Recording = { duration: number; onsets: number; loudnessDb: number };
+const recs = recordings as Record<string, Recording>;
+
+// Apparent magnitude from the recording's loudness, on Pogson's scale: five
+// magnitudes are a hundredfold in power, so one magnitude is 4 dB. The mean of
+// the twenty-four sits at 3, about the faintest star a city sky shows.
+const meanDb = Object.values(recs).reduce((s, r) => s + r.loudnessDb, 0) / Object.keys(recs).length;
+const magnitudeOf = (id: string) => Math.round((3 + (meanDb - recs[id].loudnessDb) / 4) * 10) / 10;
+
 export const etudes: Etude[] = catalogue.etudes.map((e) => ({
-  ...(e as Omit<Etude, 'duration'>),
-  duration: (recordings as Record<string, { duration: number }>)[e.id].duration,
+  ...(e as Omit<Etude, 'duration' | 'onsets' | 'magnitude'>),
+  duration: recs[e.id].duration,
+  onsets: recs[e.id].onsets,
+  magnitude: magnitudeOf(e.id),
 }));
 export const byId = new Map(etudes.map((e) => [e.id, e]));
 
@@ -38,23 +51,29 @@ export function clock(seconds: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
-// How two keys sit relative to each other, in words.
+// How b's key stands to a's, in the terms of harmony.
 export function relation(a: Etude, b: Etude) {
-  if (a.tonic === b.tonic) return a.mode === b.mode ? 'in the same key' : 'in the parallel key';
-  if (keyIndex(a) === keyIndex(b)) return 'in its relative key';
+  const enharmonic = a.key[0] !== b.key[0] ? ', spelled enharmonically' : '';
+  if (a.tonic === b.tonic) return a.mode === b.mode ? 'in the same key' : `in the parallel ${b.mode}${enharmonic}`;
+  if (keyIndex(a) === keyIndex(b)) return `in its relative ${b.mode}`;
+  const up = (b.tonic - a.tonic + 12) % 12;
+  if (up === 7) return 'in the dominant';
+  if (up === 5) return 'in the subdominant';
+  if (up === 3 || up === 4) return `a ${up === 4 ? 'major' : 'minor'} third above, a mediant relation`;
+  if (up === 8 || up === 9) return `a ${up === 8 ? 'major' : 'minor'} third below, a mediant relation`;
   const d = Math.abs(fifths(a.tonic) - fifths(b.tonic));
-  const steps = Math.min(d, 12 - d);
-  if (steps === 1) return 'a fifth away';
-  const semis = Math.min((a.tonic - b.tonic + 12) % 12, (b.tonic - a.tonic + 12) % 12);
-  if (semis === 3 || semis === 4) return 'a third away';
-  return `${steps} fifths away`;
+  return `${Math.min(d, 12 - d)} fifths away on the circle`;
 }
+
+// Études sharing a key are drawn as one multiple star.
+export const companions = (e: Etude) => etudes.filter((x) => x.id !== e.id && x.tonic === e.tonic && x.mode === e.mode);
+export const positionAngle = (e: Etude) => keyIndex(e) * 30;
 
 // The étude Chopin published beside this one: Nos. 1 and 2, 3 and 4, and so on.
 export const partnerOf = (e: Etude) => etudes.find((x) => x.op === e.op && x.no === (e.no % 2 ? e.no + 1 : e.no - 1))!;
 
 // Plate geometry, matching art/plate.mjs.
-export const PLATE = { R0: 0.06, R1: 0.395 };
+export const PLATE = { R0: 0.05, R1: 0.335 };
 export function hash(x: number, y = 0, z = 0) {
   let h = Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ Math.imul(z | 0, 1440670441);
   h = Math.imul(h ^ (h >>> 13), 1274126177);
