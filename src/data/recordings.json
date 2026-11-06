@@ -1,0 +1,98 @@
+{
+  "op10-01": {
+    "duration": 108.14,
+    "onsets": 595
+  },
+  "op10-02": {
+    "duration": 77.3,
+    "onsets": 613
+  },
+  "op10-03": {
+    "duration": 274.45,
+    "onsets": 639
+  },
+  "op10-04": {
+    "duration": 129.52,
+    "onsets": 738
+  },
+  "op10-05": {
+    "duration": 108.77,
+    "onsets": 701
+  },
+  "op10-06": {
+    "duration": 246.24,
+    "onsets": 631
+  },
+  "op10-07": {
+    "duration": 85.89,
+    "onsets": 492
+  },
+  "op10-08": {
+    "duration": 152.78,
+    "onsets": 1037
+  },
+  "op10-09": {
+    "duration": 132.82,
+    "onsets": 448
+  },
+  "op10-10": {
+    "duration": 135.4,
+    "onsets": 762
+  },
+  "op10-11": {
+    "duration": 141.63,
+    "onsets": 618
+  },
+  "op10-12": {
+    "duration": 162.35,
+    "onsets": 513
+  },
+  "op25-01": {
+    "duration": 156.09,
+    "onsets": 673
+  },
+  "op25-02": {
+    "duration": 102.35,
+    "onsets": 755
+  },
+  "op25-03": {
+    "duration": 98.94,
+    "onsets": 588
+  },
+  "op25-04": {
+    "duration": 108.75,
+    "onsets": 496
+  },
+  "op25-05": {
+    "duration": 220.45,
+    "onsets": 859
+  },
+  "op25-06": {
+    "duration": 127.49,
+    "onsets": 739
+  },
+  "op25-07": {
+    "duration": 364.07,
+    "onsets": 751
+  },
+  "op25-08": {
+    "duration": 75.36,
+    "onsets": 397
+  },
+  "op25-09": {
+    "duration": 66.6,
+    "onsets": 368
+  },
+  "op25-10": {
+    "duration": 262.3,
+    "onsets": 870
+  },
+  "op25-11": {
+    "duration": 223.52,
+    "onsets": 1263
+  },
+  "op25-12": {
+    "duration": 169.54,
+    "onsets": 746
+  }
+}

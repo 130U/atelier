@@ -1,0 +1,6 @@
+{
+  "comment": "Watercolour pigments around the circle of fifths, starting at C and moving clockwise by fifths.",
+  "letters": ["C", "G", "D", "A", "E", "B", "F♯", "D♭", "A♭", "E♭", "B♭", "F"],
+  "minorLetters": ["a", "e", "b", "f♯", "c♯", "g♯", "e♭", "b♭", "f", "c", "g", "d"],
+  "pigments": ["#f2c14a", "#f5a24c", "#ef8463", "#e7707f", "#cf72a8", "#a57fcb", "#7d90da", "#5ba7d9", "#46b5c0", "#5cbb92", "#99c565", "#d6c24f"]
+}
