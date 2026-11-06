@@ -1,0 +1,28 @@
+{
+  "etudes": [
+    { "id": "op10-01", "op": 10, "no": 1, "tonic": 0, "mode": "major", "key": "C major", "tempo": "Allegro", "en": "Waterfall", "zh": "瀑布" },
+    { "id": "op10-02", "op": 10, "no": 2, "tonic": 9, "mode": "minor", "key": "A minor", "tempo": "Allegro", "en": "Chromatic", "zh": "半音阶" },
+    { "id": "op10-03", "op": 10, "no": 3, "tonic": 4, "mode": "major", "key": "E major", "tempo": "Lento ma non troppo", "en": "Tristesse", "zh": "离别" },
+    { "id": "op10-04", "op": 10, "no": 4, "tonic": 1, "mode": "minor", "key": "C♯ minor", "tempo": "Presto", "en": "Torrent", "zh": "湍流" },
+    { "id": "op10-05", "op": 10, "no": 5, "tonic": 6, "mode": "major", "key": "G♭ major", "tempo": "Vivace", "en": "Black Keys", "zh": "黑键" },
+    { "id": "op10-06", "op": 10, "no": 6, "tonic": 3, "mode": "minor", "key": "E♭ minor", "tempo": "Andante", "en": "Lament", "zh": "悲叹" },
+    { "id": "op10-07", "op": 10, "no": 7, "tonic": 0, "mode": "major", "key": "C major", "tempo": "Vivace", "en": "Toccata", "zh": "托卡塔" },
+    { "id": "op10-08", "op": 10, "no": 8, "tonic": 5, "mode": "major", "key": "F major", "tempo": "Allegro", "en": "Sunshine", "zh": "阳光" },
+    { "id": "op10-09", "op": 10, "no": 9, "tonic": 5, "mode": "minor", "key": "F minor", "tempo": "Allegro molto agitato", "en": "", "zh": "抑郁" },
+    { "id": "op10-10", "op": 10, "no": 10, "tonic": 8, "mode": "major", "key": "A♭ major", "tempo": "Vivace assai", "en": "", "zh": "" },
+    { "id": "op10-11", "op": 10, "no": 11, "tonic": 3, "mode": "major", "key": "E♭ major", "tempo": "Allegretto", "en": "Arpeggio", "zh": "琶音" },
+    { "id": "op10-12", "op": 10, "no": 12, "tonic": 0, "mode": "minor", "key": "C minor", "tempo": "Allegro con fuoco", "en": "Revolutionary", "zh": "革命" },
+    { "id": "op25-01", "op": 25, "no": 1, "tonic": 8, "mode": "major", "key": "A♭ major", "tempo": "Allegro sostenuto", "en": "Aeolian Harp", "zh": "牧童" },
+    { "id": "op25-02", "op": 25, "no": 2, "tonic": 5, "mode": "minor", "key": "F minor", "tempo": "Presto", "en": "The Bees", "zh": "蜜蜂" },
+    { "id": "op25-03", "op": 25, "no": 3, "tonic": 5, "mode": "major", "key": "F major", "tempo": "Allegro", "en": "The Horseman", "zh": "骑士" },
+    { "id": "op25-04", "op": 25, "no": 4, "tonic": 9, "mode": "minor", "key": "A minor", "tempo": "Agitato", "en": "Paganini", "zh": "" },
+    { "id": "op25-05", "op": 25, "no": 5, "tonic": 4, "mode": "minor", "key": "E minor", "tempo": "Vivace", "en": "Wrong Note", "zh": "音程" },
+    { "id": "op25-06", "op": 25, "no": 6, "tonic": 8, "mode": "minor", "key": "G♯ minor", "tempo": "Allegro", "en": "Thirds", "zh": "三度" },
+    { "id": "op25-07", "op": 25, "no": 7, "tonic": 1, "mode": "minor", "key": "C♯ minor", "tempo": "Lento", "en": "Cello", "zh": "大提琴" },
+    { "id": "op25-08", "op": 25, "no": 8, "tonic": 1, "mode": "major", "key": "D♭ major", "tempo": "Vivace", "en": "Sixths", "zh": "六度" },
+    { "id": "op25-09", "op": 25, "no": 9, "tonic": 6, "mode": "major", "key": "G♭ major", "tempo": "Allegro assai", "en": "Butterfly", "zh": "蝴蝶" },
+    { "id": "op25-10", "op": 25, "no": 10, "tonic": 11, "mode": "minor", "key": "B minor", "tempo": "Allegro con fuoco", "en": "Octaves", "zh": "八度" },
+    { "id": "op25-11", "op": 25, "no": 11, "tonic": 9, "mode": "minor", "key": "A minor", "tempo": "Lento — Allegro con brio", "en": "Winter Wind", "zh": "冬风" },
+    { "id": "op25-12", "op": 25, "no": 12, "tonic": 0, "mode": "minor", "key": "C minor", "tempo": "Allegro molto, con fuoco", "en": "Ocean", "zh": "汪洋" }
+  ]
+}

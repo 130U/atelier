@@ -1,5 +1,4 @@
-// The brush: a few functions of x and y. Every image in the exhibition is
-// computed per pixel from these, in linear light, then tone-mapped like film.
+// The brush: a few functions of x and y, evaluated per pixel in linear light.
 
 export const TAU = Math.PI * 2;
 export const clamp = (x, a = 0, b = 1) => (x < a ? a : x > b ? b : x);
@@ -163,9 +162,11 @@ function blur(buf, w, h, r) {
 
 // Renders shade(x, y, u, v, px, state) for every pixel. x spans
 // [-aspect/2, aspect/2] and y spans [-0.5, 0.5] with y up; u and v are in
-// [0, 1] with v down. Bright light spills into a soft bloom, as in a lens.
+// [0, 1] with v down. Light is either tone-mapped like film, with a lens
+// bloom, or written as reflectance, like pigment on paper.
 export function render(work, w, h) {
-  const { exposure = 1, grain = 0.03, vignette = 0.3, bloom = 0, threshold = 0.8, spread = 0.02 } = work.look ?? {};
+  const { exposure = 1, grain = 0.03, vignette = 0.3, bloom = 0, threshold = 0.8, spread = 0.02, tone = 'film' } = work.look ?? {};
+  const curve = tone === 'paper' ? (v) => clamp(v) : aces;
   const aspect = w / h;
   const state = work.prepare ? work.prepare(w, h) : null;
   const px = 1 / h;
@@ -235,7 +236,7 @@ export function render(work, w, h) {
       }
       const p = (j * w + i) * 3;
       const rgb = [hdr[p] + gr, hdr[p + 1] + gg, hdr[p + 2] + gb];
-      for (let k = 0; k < 3; k++) out[o++] = clamp(Math.round((toSrgb(aces(rgb[k] * vig)) + n) * 255), 0, 255);
+      for (let k = 0; k < 3; k++) out[o++] = clamp(Math.round((toSrgb(curve(rgb[k] * vig)) + n) * 255), 0, 255);
     }
   }
   return out;

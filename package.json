@@ -1,6 +1,6 @@
 {
   "name": "atelier",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -10,20 +10,20 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "fetch": "node scripts/fetch-recordings.mjs",
+    "process": "node scripts/process-recordings.mjs",
     "render": "node art/render.mjs",
-    "embed": "node scripts/embed.mjs",
     "og": "node scripts/og.mjs"
   },
   "dependencies": {
-    "@fontsource/instrument-serif": "5.3.0",
+    "@fontsource/cormorant-garamond": "5.3.0",
     "@fontsource/jetbrains-mono": "5.3.0",
-    "astro": "7.4.2",
-    "three": "0.186.1"
+    "@fontsource/pinyon-script": "5.3.0",
+    "astro": "7.4.2"
   },
   "devDependencies": {
-    "@huggingface/transformers": "4.3.1",
-    "@types/three": "0.186.0",
+    "@wasm-audio-decoders/flac": "0.2.11",
     "sharp": "0.35.5",
-    "umap-js": "1.4.0"
+    "wasm-media-encoders": "0.7.0"
   }
 }
