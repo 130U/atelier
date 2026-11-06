@@ -10,7 +10,8 @@ main,
 .button,
 .text-link,
 .hint,
-.solar,
+.scroll-head,
+.scroll-rows,
 .tile-ident,
 .now-ident,
 .time,
@@ -82,22 +83,16 @@ main,
   color: var(--ink);
 }
 
-/* Hero */
+/* Hero: the chart and its card, and beneath them the handscroll */
 .hero {
+  --scroll-h: 128px;
   position: relative;
   min-height: 100svh;
-  padding: 88px 48px 110px;
+  padding: 84px 48px 96px;
   display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 28px;
   align-items: center;
-}
-.ink {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0;
-  mix-blend-mode: multiply;
 }
 .hero-grid {
   position: relative;
@@ -114,7 +109,7 @@ main,
   position: relative;
   margin: 0;
   justify-self: center;
-  width: min(100%, calc(100svh - 210px));
+  width: min(100%, calc(100svh - 84px - 96px - 28px - var(--scroll-h) - 36px));
 }
 #chart {
   display: block;
@@ -272,13 +267,99 @@ main,
   margin-right: 8px;
 }
 
-.solar {
-  position: absolute;
-  left: 48px;
-  bottom: 82px;
+/* The handscroll: the circle of fifths laid flat, read left to right in time */
+.scroll {
+  position: relative;
   z-index: 1;
-  margin: 0;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+.scroll-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+  font-size: 10px;
   color: var(--ink-3);
+}
+#scroll-title {
+  color: var(--ink-2);
+}
+.scroll-paper {
+  position: relative;
+  height: var(--scroll-h);
+  border-top: 1px solid var(--hair-2);
+  border-bottom: 1px solid var(--hair-2);
+  background: linear-gradient(to right, rgba(255, 253, 248, 0.55), rgba(255, 253, 248, 0.25));
+}
+.scroll-rows {
+  position: absolute;
+  inset: 4px 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-rows: repeat(12, minmax(0, 1fr));
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  text-transform: none;
+}
+.scroll-rows li {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-3);
+}
+.scroll-rows li::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--pigment);
+  flex: none;
+}
+.scroll-rows span {
+  width: 20px;
+}
+.scroll-rows li::after {
+  content: '';
+  position: absolute;
+  left: 36px;
+  right: 0;
+  top: 50%;
+  border-top: 1px solid rgba(23, 23, 28, 0.06);
+}
+.scroll-sheet {
+  position: absolute;
+  inset: 4px 0 4px 36px;
+  cursor: pointer;
+}
+.scroll-sheet canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  mix-blend-mode: multiply;
+  transition: opacity 1.4s var(--ease);
+}
+.scroll-sheet canvas.on {
+  opacity: 1;
+}
+.playhead {
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  left: 0;
+  width: 1px;
+  background: var(--seal);
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+.playhead.on {
+  opacity: 0.8;
 }
 
 /* Aside: introduction, then one étude */
@@ -791,9 +872,27 @@ main,
   .aside h1 {
     font-size: 48px;
   }
-  .solar {
-    position: static;
-    margin-top: 24px;
+  .hero {
+    --scroll-h: 112px;
+    grid-template-rows: none;
+    gap: 22px;
+  }
+  /* On a phone the scroll sits right under the chart, above the card. */
+  .hero-grid {
+    display: contents;
+  }
+  .chart {
+    order: 0;
+  }
+  .scroll {
+    order: 1;
+  }
+  .scroll-head {
+    flex-direction: column;
+    gap: 2px;
+  }
+  .aside {
+    order: 2;
   }
   .plates,
   .notes {

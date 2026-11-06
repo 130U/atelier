@@ -1,6 +1,6 @@
-import { etudes, byId, nameOf, clock, relation, partnerOf, companions, positionAngle, keyIndex, fifths, hash, pigment, PLATE, type Etude } from '../lib/theory';
+import { etudes, byId, nameOf, clock, relation, partnerOf, companions, positionAngle, keyIndex, fifths, hash, pigment, PIGMENTS, PLATE, type Etude } from '../lib/theory';
 import { Player } from './player';
-import { Ink, Hand, seeded, trueSolarTime } from './ink';
+import { Sheet, paint, across, when, seeded, trueSolarTime } from './scroll';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const url = {
@@ -79,36 +79,40 @@ export function start() {
   let advancing = false;
   let current: { id: string; a: Analysis } | null = null;
 
-  // The ink: seeded by the minute of arrival and placed by true solar time.
+  // The handscroll. Two sheets: the étude on the scroll now, and the one before
+  // it fading out. The paper and brush are seeded by the minute of arrival and
+  // the true solar time, so no two visits are painted quite alike.
   const arrival = new Date();
   const solar = trueSolarTime(arrival);
-  const sunAngle = ((solar - 12) / 24) * TAU;
-  const rand = seeded(Math.floor(arrival.getTime() / 60000) ^ Math.round(solar * 3600));
-  const ink = new Ink($<HTMLCanvasElement>('#ink'), rand);
-  const hand = new Hand(rand, sunAngle);
-  const h = Math.floor(solar);
-  const m = Math.floor((solar - h) * 60);
-  $('#solar').textContent = `The ink began at ${pad(h)}:${pad(m)}, true solar time`;
+  const seed = Math.floor(arrival.getTime() / 60000) ^ Math.round(solar * 3600);
+  const sheets = [new Sheet($<HTMLCanvasElement>('#scroll-a')), new Sheet($<HTMLCanvasElement>('#scroll-b'))];
+  let sheet = 0;
+  const sheetEl = $('.scroll-sheet');
+  const playhead = $('#playhead');
+  const scrollTitle = $('#scroll-title');
+  const scrollNote = $('#scroll-note');
+  const solarText = `${pad(Math.floor(solar))}:${pad(Math.floor((solar % 1) * 60))}`;
 
-  // Chart geometry in the ink canvas's coordinates.
-  const frameOf = () => {
-    const r = svg.getBoundingClientRect();
-    const o = hero.getBoundingClientRect();
-    return { cx: r.left - o.left + r.width / 2, cy: r.top - o.top + r.height / 2, R: r.width * 0.33, scale: r.width / 1000, left: r.left - o.left, top: r.top - o.top };
-  };
-  const toCanvas = (x: number, y: number) => {
-    const f = frameOf();
-    return { x: f.cx + x * f.R, y: f.cy + y * f.R, R: f.R };
-  };
+  function render(s: Sheet, id: string) {
+    analysis(id).then((a) => {
+      if (s.id !== id) return;
+      const [w, h] = s.size();
+      s.set(paint(a, PIGMENTS, w, h, seeded(seed + order.indexOf(id) * 7919)), a.duration);
+    });
+  }
 
-  // The day's light, set down before anything plays: a pale disc where the
-  // sun stands at this hour, the centre otherwise left blank.
-  requestAnimationFrame(() => {
-    ink.resize();
-    const p = toCanvas(Math.sin(sunAngle) * 0.78, -Math.cos(sunAngle) * 0.78);
-    ink.wash(p.x, p.y, p.R * 0.2, 0.22, solar > 6 && solar < 18 ? '#e9b24a' : '#8e9bc4');
-    ink.drop(p.x, p.y, p.R * 0.05, 0.25);
-  });
+  function unroll(id: string) {
+    if (sheets[sheet].id === id) return;
+    const e = byId.get(id)!;
+    sheets[sheet].canvas.classList.remove('on');
+    sheet = 1 - sheet;
+    const s = sheets[sheet];
+    s.begin(id);
+    s.canvas.classList.add('on');
+    render(s, id);
+    scrollTitle.textContent = `Handscroll · Op. ${e.op} No. ${e.no}${e.en ? ` · ${e.en}` : ''}`;
+    scrollNote.textContent = `${e.key} · ${clock(e.duration)} · ${solarText} true solar time`;
+  }
 
   const centre = (id: string) => {
     const g = stars.get(id)!;
@@ -208,17 +212,10 @@ export function start() {
       }),
     );
     history.replaceState(null, '', `#${id}`);
+    unroll(id);
     if (prev && prev !== id) drawTrail(prev, id);
     if (!player.id || player.id === id) showNow(e);
     analysis(id);
-    // A touch of ink where the star is chosen.
-    if (!opts.play && !player.playing) {
-      const c = centre(id);
-      const f = frameOf();
-      const x = f.left + c.x * f.scale;
-      const y = f.top + c.y * f.scale;
-      ink.wash(x, y, f.R * 0.09, 0.3, pigment(e));
-    }
     if (opts.play) play(id);
   }
 
@@ -341,75 +338,28 @@ export function start() {
       toggle();
     }
   });
-  addEventListener('resize', () => ink.resize());
+  let resizing = 0;
+  addEventListener('resize', () => {
+    clearTimeout(resizing);
+    resizing = window.setTimeout(() => sheets.forEach((s) => s.id && render(s, s.id)), 200);
+  });
+  // Touching the scroll moves the music to that moment.
+  sheetEl.addEventListener('click', (ev) => {
+    const id = sheets[sheet].id;
+    if (!id) return;
+    const r = sheetEl.getBoundingClientRect();
+    const f = when((ev.clientX - r.left) / r.width);
+    if (player.id === id) player.seek(f);
+    else {
+      select(id);
+      play(id).then(() => player.id === id && player.seek(f));
+    }
+  });
   if ('mediaSession' in navigator) {
     navigator.mediaSession.setActionHandler('play', () => player.resume());
     navigator.mediaSession.setActionHandler('pause', () => player.pause());
     navigator.mediaSession.setActionHandler('previoustrack', () => step(-1));
     navigator.mediaSession.setActionHandler('nexttrack', () => step(1));
-  }
-
-  // The ink follows the music. Three brushes wander through the open centre.
-  // While notes sound, the first draws a continuous line whose weight follows
-  // the playing, and breaks into dry brush where the music thins; the second
-  // traces a finer line; hard accents press a blot of ink; loud passages
-  // leave a pale wash in the colour of the key.
-  let inkedTo = -1;
-  let inkedId: string | null = null;
-  let lastWash = 0;
-  let lastBlot = -9;
-  let load = 0;
-  let prev: { x: number; y: number; w: number }[] = [];
-  function paint(t: number, id: string, a: Analysis, dt: number) {
-    if (inkedId !== id || t < inkedTo || t - inkedTo > 1.5) {
-      inkedId = id;
-      inkedTo = t;
-      prev = [];
-      return;
-    }
-    const e = byId.get(id)!;
-    let energy = 0;
-    let pull = 0;
-    let k = lastBefore(a.times, inkedTo) + 1;
-    for (; k < a.times.length && a.times[k] <= t; k++) {
-      const s = a.onsets[k * 3 + 1] / 99;
-      const mask = a.onsets[k * 3 + 2];
-      energy += s;
-      const pcs = [...Array(12).keys()].filter((pc) => mask & (1 << pc));
-      if (pcs.length) pull = (fifths(pcs[0]) / 12) * TAU;
-      if (a.times[k] < lastBlot) lastBlot = -9;
-      if (s > 0.88 && a.times[k] - lastBlot > 1.6) {
-        lastBlot = a.times[k];
-        const u = hand.place(pull, 0);
-        const p = toCanvas(u.x, u.y);
-        ink.blot(p.x, p.y, p.R * (0.07 + 0.08 * s), 0.85);
-        for (let j = 0; j < 4; j++) ink.drop(p.x + (rand() - 0.5) * p.R * 0.22, p.y + (rand() - 0.5) * p.R * 0.22, p.R * (0.004 + rand() * 0.007), 0.75);
-      } else if (s > 0.66 && rand() < 0.08) {
-        const u = hand.place(pull, 2);
-        const p = toCanvas(u.x, u.y);
-        ink.blot(p.x, p.y, p.R * (0.03 + 0.03 * s), 0.55);
-      }
-    }
-    // The brush's load of ink rises with the playing and falls in the rests.
-    const target = Math.min(1, (energy / Math.max(dt, 0.016)) * 0.09);
-    load += (target - load) * (target > load ? 0.35 : 0.06);
-    const pts = hand.agents.slice(0, 2).map((g, i) => {
-      const p = toCanvas(g.x, g.y);
-      return { x: p.x, y: p.y, w: p.R * (i === 0 ? 0.012 + 0.07 * load : 0.005 + 0.02 * load) };
-    });
-    if (load > 0.08 && prev.length) {
-      pts.forEach((p, i) => ink.line(prev[i].x, prev[i].y, p.x, p.y, prev[i].w, p.w, (i === 0 ? 0.35 : 0.25) + 0.6 * load));
-    }
-    prev = pts;
-    const loud = (a.loud[Math.min(a.loud.length - 1, Math.floor(t * 4))] ?? 0) / 99;
-    if (t < lastWash) lastWash = t;
-    if (loud > 0.72 && t - lastWash > 7) {
-      lastWash = t;
-      const w = hand.agents[2];
-      const p = toCanvas(w.x, w.y);
-      ink.wash(p.x, p.y, p.R * (0.22 + 0.14 * rand()), 0.16, pigment(e));
-    }
-    inkedTo = t;
   }
 
   // The plate in the viewer plays along: a gold ring at the present moment,
@@ -461,7 +411,6 @@ export function start() {
     playerEl.classList.toggle('playing', playing);
     playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
     for (const [k, s] of stars) s.classList.toggle('playing', k === id && playing);
-    if (playing) hand.move(dt);
 
     if (id) {
       const t = player.time;
@@ -484,7 +433,6 @@ export function start() {
       if (current?.id === id && playing) {
         const k = lastBefore(current.a.times, t);
         if (k >= 0 && t - current.a.times[k] < 0.06) pulse = Math.max(pulse, current.a.onsets[k * 3 + 1] / 99);
-        if (!reduce) paint(t, id, current.a, dt);
       }
       stars.get(id)!.style.setProperty('--pulse', reduce ? '0' : pulse.toFixed(3));
 
@@ -493,7 +441,12 @@ export function start() {
     } else if (selected) {
       timeEl.textContent = `0:00 / ${clock(byId.get(selected)!.duration)}`;
     }
-    if (!reduce) ink.frame(now);
+    const s = sheets[sheet];
+    const live = !!id && s.id === id;
+    const t = live ? player.time : 0;
+    s.draw(t, live && playing, dt);
+    playhead.classList.toggle('on', live && t > 0);
+    if (live) playhead.style.transform = `translateX(${across(t, s.duration) * sheetEl.clientWidth}px)`;
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
@@ -505,4 +458,5 @@ export function start() {
   };
   addEventListener('hashchange', fromHash);
   fromHash();
+  if (!selected) unroll(order[0]);
 }
