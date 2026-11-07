@@ -7,7 +7,7 @@ import path from 'node:path';
 
 const root = path.resolve(import.meta.dirname, '..');
 const dir = path.join(root, '.cache', 'recordings');
-const UA = 'atelier-build/1.0 (https://www.theodoreoy.com/atelier/)';
+const UA = 'etude-sky-build/1.0 (https://www.theodoreoy.com/etude-sky/)';
 const api =
   'https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=50' +
   '&gsrsearch=' + encodeURIComponent('Neeman "12 Études"') +
