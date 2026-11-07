@@ -1,6 +1,6 @@
 # The Étude Sky
 
-Chopin’s twenty-four études, charted as stars on the circle of fifths and curated by Theodore Ouyang at [www.theodoreoy.com/atelier/](https://www.theodoreoy.com/atelier/).
+Chopin’s twenty-four études, charted as stars on the circle of fifths and curated by Theodore Ouyang at [www.theodoreoy.com/etude-sky/](https://www.theodoreoy.com/etude-sky/).
 
 Everything on the page is computed from the music: each recording is analysed once, and the chart, the plates and the handscroll are drawn from that analysis by fixed rules.
 
@@ -44,7 +44,7 @@ public/
 | Command | What it does |
 |---|---|
 | `npm install` | Install dependencies |
-| `npm run dev` | Serve the site at `localhost:4321/atelier/` |
+| `npm run dev` | Serve the site at `localhost:4321/etude-sky/` |
 | `npm run fetch` | Download the 24 recordings into `.cache/recordings/` and verify their checksums |
 | `npm run process` | Write `public/audio/`, `public/data/` and `src/data/recordings.json` from the recordings |
 | `npm run render` | Render the plates into `public/plates/`; pass ids such as `op10-05` to render only those |
