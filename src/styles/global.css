@@ -46,6 +46,12 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Running text keeps an even rag and no word alone on its last line. */
+p,
+dd {
+  text-wrap: pretty;
+}
+
 /* Rice paper: a faint fibre over the whole page. */
 body::before {
   content: '';
