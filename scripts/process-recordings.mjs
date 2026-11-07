@@ -181,7 +181,6 @@ async function processOne(id) {
     binW[k] = Math.cos(Math.PI * (midi - near)) ** 2;
   }
   const chroma = [];
-  const profile = new Float64Array(12);
   spectra(x, N2, H2, (f, mag) => {
     const c = new Float64Array(12);
     // Only spectral peaks count, so partials between notes do not smear the classes.
@@ -193,7 +192,6 @@ async function processOne(id) {
       c[binPc[k]] += mag[k] * binW[k];
     }
     chroma.push(c);
-    for (let i = 0; i < 12; i++) profile[i] += c[i];
   });
 
   const onsets = [];
@@ -217,18 +215,15 @@ async function processOne(id) {
     loud.push(Math.max(0, Math.min(99, Math.round(((loudDb(s / q) + 50) / 44) * 99))));
   }
 
-  const pmax = Math.max(...profile);
   const data = {
     id,
     duration: Math.round((len / sr) * 100) / 100,
-    gainDb: Math.round(gainDb * 10) / 10,
     loudnessDb: Math.round(integrated * 10) / 10,
-    profile: [...profile].map((v) => Math.round((v / pmax) * 1000) / 1000),
     onsets,
     loud,
   };
   await fs.writeFile(path.join(dataDir, `${id}.json`), JSON.stringify(data));
-  return { id, duration: data.duration, gainDb: data.gainDb, onsets: onsets.length / 3, mp3: mp3.length };
+  return { id, duration: data.duration, gainDb: Math.round(gainDb * 10) / 10, onsets: onsets.length / 3, mp3: mp3.length };
 }
 
 if (!isMainThread) {

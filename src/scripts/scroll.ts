@@ -5,17 +5,7 @@
 // painting is then unrolled at the playhead, so each stroke appears as its
 // note sounds and its tail lengthens while it rings.
 
-export type Rand = () => number;
-
-export function seeded(seed: number): Rand {
-  let s = seed | 0;
-  return () => {
-    s = (s + 0x6d2b79f5) | 0;
-    let t = Math.imul(s ^ (s >>> 15), 1 | s);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+import { type Rand } from '../lib/random';
 
 // True solar time in hours: clock time corrected by the equation of time,
 // taken at the central meridian of the visitor's time zone.

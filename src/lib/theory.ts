@@ -1,6 +1,8 @@
-import catalogue from '../data/etudes.json';
-import recordings from '../data/recordings.json';
-import palette from '../data/palette.json';
+// The catalogue and the music theory behind the chart, shared by the site and
+// the plate renderer.
+import catalogue from '../data/etudes.json' with { type: 'json' };
+import recordings from '../data/recordings.json' with { type: 'json' };
+import palette from '../data/palette.json' with { type: 'json' };
 
 export interface Etude {
   id: string;
@@ -10,7 +12,7 @@ export interface Etude {
   mode: 'major' | 'minor';
   key: string;
   tempo: string;
-  en: string;
+  nickname: string;
   duration: number;
   onsets: number;
   magnitude: number;
@@ -41,9 +43,11 @@ export const fifths = (pc: number) => (pc * 7) % 12;
 // A minor key sits at the same angle as its relative major.
 export const keyIndex = (e: Etude) => fifths(e.mode === 'major' ? e.tonic : (e.tonic + 3) % 12);
 export const pigment = (e: Etude) => PIGMENTS[keyIndex(e)];
-export const label = (e: Etude) => `Op. ${e.op} · No. ${e.no}`;
+
+// How an étude is cited: Op. 10 No. 3 in text, 10·3 on the chart.
+export const ident = (e: Etude) => `Op. ${e.op} No. ${e.no}`;
 export const short = (e: Etude) => `${e.op}·${e.no}`;
-export const nameOf = (e: Etude) => e.en || `No. ${e.no}`;
+export const nameOf = (e: Etude) => e.nickname || `Étude in ${e.key}`;
 
 export function clock(seconds: number) {
   const s = Math.max(0, Math.round(seconds));
@@ -71,11 +75,6 @@ export const positionAngle = (e: Etude) => keyIndex(e) * 30;
 // The étude Chopin published beside this one: Nos. 1 and 2, 3 and 4, and so on.
 export const partnerOf = (e: Etude) => etudes.find((x) => x.op === e.op && x.no === (e.no % 2 ? e.no + 1 : e.no - 1))!;
 
-// Plate geometry, matching art/plate.mjs.
+// A plate's polar plot runs from R0 at the first note to R1 at the last, as a
+// share of the plate's width.
 export const PLATE = { R0: 0.05, R1: 0.335 };
-export function hash(x: number, y = 0, z = 0) {
-  let h = Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ Math.imul(z | 0, 1440670441);
-  h = Math.imul(h ^ (h >>> 13), 1274126177);
-  h ^= h >>> 16;
-  return (h >>> 0) / 4294967296;
-}

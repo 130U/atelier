@@ -2,10 +2,10 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
-import { text } from '../art/plate.mjs';
+import { text, GOLD } from '../art/plate.mjs';
+import { etudes } from '../src/lib/theory.ts';
 
 const root = path.resolve(import.meta.dirname, '..');
-const { etudes } = JSON.parse(await fs.readFile(path.join(root, 'src', 'data', 'etudes.json'), 'utf8'));
 const W = 1200;
 const H = 630;
 const S = 150;
@@ -19,9 +19,9 @@ const tiles = await Promise.all(
 );
 const words = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
   ${text('The Étude Sky', 62, 280, 96, { face: 'hand' })}
-  ${text("Chopin's twenty-four études,", 66, 336, 30, { face: 'italic', opacity: 0.8 })}
+  ${text('Chopin’s twenty-four études,', 66, 336, 30, { face: 'italic', opacity: 0.8 })}
   ${text('charted as stars', 66, 372, 30, { face: 'italic', opacity: 0.8 })}
-  ${text('CURATED BY THEODORE OUYANG', 66, 540, 16, { face: 'mono', spacing: 2, fill: '#a8781f' })}
+  ${text('CURATED BY THEODORE OUYANG', 66, 540, 16, { face: 'mono', spacing: 2, fill: GOLD })}
 </svg>`;
 await sharp({ create: { width: W, height: H, channels: 3, background: '#f7f0e3' } })
   .composite([...tiles, { input: Buffer.from(words) }])

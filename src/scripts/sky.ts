@@ -1,6 +1,7 @@
-import { etudes, byId, nameOf, clock, relation, partnerOf, companions, positionAngle, keyIndex, fifths, hash, pigment, PIGMENTS, PLATE, type Etude } from '../lib/theory';
+import { etudes, byId, ident, short, nameOf, clock, relation, partnerOf, companions, positionAngle, keyIndex, fifths, pigment, PIGMENTS, PLATE, type Etude } from '../lib/theory';
+import { hash, seeded } from '../lib/random';
 import { Player } from './player';
-import { Sheet, paint, across, when, seeded, trueSolarTime } from './scroll';
+import { Sheet, paint, across, when, trueSolarTime } from './scroll';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const url = {
@@ -57,7 +58,6 @@ export function start() {
   const stars = new Map([...document.querySelectorAll<SVGGElement>('#chart .star')].map((g) => [g.dataset.id!, g]));
   const index = new Map([...document.querySelectorAll<HTMLButtonElement>('[data-goto]')].map((b) => [b.dataset.goto!, b]));
 
-  const hero = $('#sky');
   const svg = $<SVGSVGElement>('#chart');
   const chart = $('.chart');
   const tip = $('#tip');
@@ -110,7 +110,7 @@ export function start() {
     s.begin(id);
     s.canvas.classList.add('on');
     render(s, id);
-    scrollTitle.textContent = `Handscroll · Op. ${e.op} No. ${e.no}${e.en ? ` · ${e.en}` : ''}`;
+    scrollTitle.textContent = `Handscroll · ${ident(e)}${e.nickname ? ` · ${e.nickname}` : ''}`;
     scrollNote.textContent = `${e.key} · ${clock(e.duration)} · ${solarText} true solar time`;
   }
 
@@ -143,6 +143,9 @@ export function start() {
     return div;
   }
 
+  // The études nearest in key, closest first: the one published beside it,
+  // companions in the same key, those in the relative key, then the dominant
+  // and subdominant. Four at most.
   function neighbours(e: Etude) {
     const out: { e: Etude; why: string }[] = [];
     const seen = new Set([e.id]);
@@ -159,17 +162,17 @@ export function start() {
       const up = (x.tonic - e.tonic + 12) % 12;
       if (x.mode === e.mode && (up === 7 || up === 5)) add(x, relation(e, x));
     }
-    return out;
+    return out.slice(0, 4);
   }
 
   function multiplicity(e: Etude) {
     const c = companions(e);
     if (!c.length) return 'Single';
-    return `${c.length === 1 ? 'Double' : 'Triple'}, with ${c.map((x) => `Op. ${x.op} No. ${x.no}`).join(' and ')}`;
+    return `${c.length === 1 ? 'Double' : 'Triple'}, with ${c.map(ident).join(' and ')}`;
   }
 
   function showNow(e: Etude) {
-    nowIdent.textContent = `Op. ${e.op} · No. ${pad(e.no)}`;
+    nowIdent.textContent = ident(e);
     nowName.textContent = nameOf(e);
   }
 
@@ -182,7 +185,7 @@ export function start() {
     for (const [k, b] of index) b.setAttribute('aria-current', String(k === id));
     intro.hidden = true;
     card.hidden = false;
-    $('#card-ident').textContent = `Op. ${e.op} · No. ${pad(e.no)}`;
+    $('#card-ident').textContent = ident(e);
     $('#card-name').textContent = nameOf(e);
     $('#card-key').textContent = `${e.key} · ${e.tempo}`;
     $('#card-entry').replaceChildren(
@@ -201,7 +204,7 @@ export function start() {
         const body = document.createElement('span');
         const b = document.createElement('button');
         b.type = 'button';
-        b.textContent = `Op. ${x.op} No. ${x.no}${x.en ? `, ${x.en}` : ''}`;
+        b.textContent = `${ident(x)}${x.nickname ? `, ${x.nickname}` : ''}`;
         b.addEventListener('click', () => select(x.id, { play: player.playing }));
         const w = document.createElement('span');
         w.className = 'why';
@@ -230,7 +233,7 @@ export function start() {
     });
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: `Étude Op. ${e.op} No. ${e.no}${e.en ? ` “${e.en}”` : ''}`,
+        title: `Étude ${ident(e)}${e.nickname ? `, ${e.nickname}` : ''}`,
         artist: 'Frédéric Chopin · Edward Neeman',
         album: 'The Étude Sky',
         artwork: [{ src: new URL(url.thumb(id), location.href).href, sizes: '520x520', type: 'image/jpeg' }],
@@ -250,6 +253,19 @@ export function start() {
     else select(selected ?? order[0], { play: true });
   }
 
+  // One label for a star, on the chart or in the index: its number and name.
+  function showTip(id: string, anchor: Element) {
+    const e = byId.get(id)!;
+    const r = anchor.getBoundingClientRect();
+    const b = document.createElement('b');
+    b.textContent = short(e);
+    tip.replaceChildren(b, document.createTextNode(nameOf(e)));
+    tip.style.left = `${r.left + r.width / 2}px`;
+    tip.style.top = `${r.top}px`;
+    tip.classList.add('on');
+  }
+  const hideTip = () => tip.classList.remove('on');
+
   // The plate viewer.
   const vImg = $<HTMLImageElement>('#viewer-img');
   const vLive = $<HTMLCanvasElement>('#viewer-live');
@@ -257,8 +273,8 @@ export function start() {
     const e = byId.get(id)!;
     viewing = id;
     vImg.src = url.plate(id);
-    vImg.alt = `Plate for Op. ${e.op}, No. ${e.no} in ${e.key}`;
-    $('#viewer-ident').textContent = `Op. ${e.op} · No. ${pad(e.no)}`;
+    vImg.alt = `Plate for ${ident(e)}, ${e.key}`;
+    $('#viewer-ident').textContent = ident(e);
     $('#viewer-name').textContent = nameOf(e);
     $('#viewer-key').textContent = `${e.key} · ${e.tempo} · mag ${e.magnitude.toFixed(1)} · ${clock(e.duration)}`;
     $('#viewer-play').textContent = player.id === id && player.playing ? 'Playing' : 'Listen';
@@ -298,21 +314,16 @@ export function start() {
         select(id, { play: player.playing });
       }
     });
-    g.addEventListener('mouseenter', () => {
-      const e = byId.get(id)!;
-      const r = g.querySelector('.body')!.getBoundingClientRect();
-      const f = chart.getBoundingClientRect();
-      tip.replaceChildren();
-      const b = document.createElement('b');
-      b.textContent = `${e.op}·${e.no}`;
-      tip.append(b, document.createTextNode(e.en || e.key));
-      tip.style.left = `${r.left + r.width / 2 - f.left}px`;
-      tip.style.top = `${r.top - f.top}px`;
-      tip.classList.add('on');
-    });
-    g.addEventListener('mouseleave', () => tip.classList.remove('on'));
+    g.addEventListener('mouseenter', () => showTip(id, g.querySelector('.body')!));
+    g.addEventListener('mouseleave', hideTip);
   }
-  for (const [id, b] of index) b.addEventListener('click', () => select(id, { play: player.playing }));
+  for (const [id, b] of index) {
+    b.addEventListener('click', () => select(id, { play: player.playing }));
+    b.addEventListener('mouseenter', () => showTip(id, b));
+    b.addEventListener('focus', () => showTip(id, b));
+    b.addEventListener('mouseleave', hideTip);
+    b.addEventListener('blur', hideTip);
+  }
   document.querySelectorAll<HTMLButtonElement>('[data-step]').forEach((b) => b.addEventListener('click', () => step(Number(b.dataset.step))));
   $('[data-begin]').addEventListener('click', () => select(order[0], { play: true }));
   playBtn.addEventListener('click', toggle);
@@ -338,6 +349,12 @@ export function start() {
       toggle();
     }
   });
+  // The chart is drawn in a 1000-unit square; its lettering is sized in
+  // screen pixels through --z, the units to a pixel at the current size.
+  new ResizeObserver(([entry]) => {
+    if (entry.contentRect.width) chart.style.setProperty('--z', (1000 / entry.contentRect.width).toFixed(3));
+  }).observe(svg);
+
   let resizing = 0;
   addEventListener('resize', () => {
     clearTimeout(resizing);

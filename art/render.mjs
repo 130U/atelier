@@ -8,25 +8,19 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Worker, isMainThread, parentPort, workerData } from 'node:worker_threads';
 import sharp from 'sharp';
+import { etudes, byId } from '../src/lib/theory.ts';
 import { render } from './lib.mjs';
 import { plateWork, plateSvg, SIZE } from './plate.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dataDir = path.join(root, 'public', 'data');
 const outDir = path.join(root, 'public', 'plates');
-const { etudes } = JSON.parse(await fs.readFile(path.join(root, 'src', 'data', 'etudes.json'), 'utf8'));
-const recordings = JSON.parse(await fs.readFile(path.join(root, 'src', 'data', 'recordings.json'), 'utf8'));
-
-// Apparent magnitude from loudness, on Pogson's scale: five magnitudes are a
-// hundredfold in power, so one magnitude is 4 dB. The mean sits at 3.
-const mean = Object.values(recordings).reduce((s, r) => s + r.loudnessDb, 0) / etudes.length;
-const magnitude = (id) => 3 + (mean - recordings[id].loudnessDb) / 4;
 
 if (!isMainThread) {
-  const e = etudes.find((x) => x.id === workerData);
+  const e = byId.get(workerData);
   const data = JSON.parse(await fs.readFile(path.join(dataDir, `${e.id}.json`), 'utf8'));
   const pixels = render(plateWork(e, data), SIZE, SIZE);
-  const ink = Buffer.from(plateSvg(e, data, { magnitude: magnitude(e.id) }));
+  const ink = Buffer.from(plateSvg(e, data));
   const plate = await sharp(pixels, { raw: { width: SIZE, height: SIZE, channels: 3 } })
     .composite([{ input: ink }])
     .jpeg({ quality: 90, mozjpeg: true, chromaSubsampling: '4:4:4' })

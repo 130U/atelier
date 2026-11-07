@@ -23,7 +23,7 @@ main,
 .glossary dt,
 .entry dt {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--size-label);
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
@@ -83,15 +83,17 @@ main,
   color: var(--ink);
 }
 
-/* Hero: the chart and its card, and beneath them the handscroll */
+/* Hero: the chart with its handscroll beneath, and beside them the card */
 .hero {
+  --top: 84px;
+  --bottom: 96px;
+  --gap: 28px;
   --scroll-h: 128px;
+  --scroll-head: 36px;
   position: relative;
   min-height: 100svh;
-  padding: 84px 48px 96px;
+  padding: var(--top) 48px var(--bottom);
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-  gap: 28px;
   align-items: center;
 }
 .hero-grid {
@@ -103,13 +105,27 @@ main,
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
   gap: 72px;
-  align-items: center;
+  align-items: start;
 }
+.stage {
+  display: grid;
+  gap: var(--gap);
+  justify-items: center;
+  min-width: 0;
+}
+.aside {
+  align-self: center;
+}
+/* The chart fills the height left above the handscroll. Its lettering keeps
+   one size on screen however large the chart is drawn: --z is the number of
+   chart units to a CSS pixel, kept current by the script. */
 .chart {
+  --z: 1.9;
   position: relative;
   margin: 0;
   justify-self: center;
-  width: min(100%, calc(100svh - 84px - 96px - 28px - var(--scroll-h) - 36px));
+  width: min(100%, calc(100svh - var(--top) - var(--bottom) - var(--gap) - var(--scroll-h) - var(--scroll-head)));
+  container: chart / inline-size;
 }
 #chart {
   display: block;
@@ -147,10 +163,10 @@ main,
   fill: var(--ink);
 }
 #chart .key.major {
-  font-size: 25px;
+  font-size: calc(14px * var(--z));
 }
 #chart .key.minor {
-  font-size: 18px;
+  font-size: calc(12px * var(--z));
   font-style: italic;
   fill: var(--ink-3);
 }
@@ -202,8 +218,8 @@ main,
 }
 /* While a star sounds, its halo turns to ink and trembles with the attack. */
 #chart .star.playing .halo {
-  fill: #23232b;
-  opacity: 0.34;
+  fill: var(--ink);
+  opacity: 0.3;
 }
 #chart .body {
   fill: var(--pigment);
@@ -225,10 +241,20 @@ main,
 }
 #chart .tag {
   font-family: var(--mono);
-  font-size: 12.5px;
-  letter-spacing: 0.04em;
+  font-size: calc(9px * var(--z));
+  letter-spacing: 0.02em;
   text-anchor: middle;
+  dominant-baseline: hanging;
   fill: var(--ink-2);
+}
+/* On a small chart the stars sit too close to letter every one. */
+@container chart (max-width: 479px) {
+  #chart .tag {
+    opacity: 0;
+  }
+  #chart .star.selected .tag {
+    opacity: 1;
+  }
 }
 #chart .star:hover .body,
 #chart .star:focus-visible .body {
@@ -242,17 +268,17 @@ main,
 }
 
 .tip {
-  position: absolute;
-  z-index: 3;
+  position: fixed;
+  z-index: 6;
   pointer-events: none;
   padding: 6px 12px 7px;
   background: rgba(250, 247, 241, 0.96);
   border: 1px solid var(--hair);
   border-radius: 999px;
-  font-size: 15px;
+  font-size: var(--size-small);
   white-space: nowrap;
   opacity: 0;
-  transform: translate(-50%, calc(-100% - 12px));
+  transform: translate(-50%, calc(-100% - 10px));
   transition: opacity 0.15s;
 }
 .tip.on {
@@ -261,7 +287,7 @@ main,
 .tip b {
   font-family: var(--mono);
   font-weight: 400;
-  font-size: 10.5px;
+  font-size: var(--size-label);
   letter-spacing: 0.1em;
   color: var(--ink-3);
   margin-right: 8px;
@@ -272,15 +298,13 @@ main,
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 1440px;
-  margin: 0 auto;
+  margin: 0;
 }
 .scroll-head {
   display: flex;
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 8px;
-  font-size: 10px;
   color: var(--ink-3);
 }
 #scroll-title {
@@ -301,7 +325,7 @@ main,
   list-style: none;
   display: grid;
   grid-template-rows: repeat(12, minmax(0, 1fr));
-  font-size: 8.5px;
+  font-size: var(--size-axis);
   letter-spacing: 0.06em;
   text-transform: none;
 }
@@ -367,13 +391,14 @@ main,
   margin: 16px 0 0;
   font-family: var(--hand);
   font-weight: 400;
-  font-size: 60px;
-  line-height: 1.12;
+  font-size: var(--size-display);
+  line-height: 1.1;
   letter-spacing: 0;
 }
 .lede {
   margin: 16px 0 0;
-  font-size: 19px;
+  font-size: var(--size-lede);
+  line-height: 1.5;
   color: var(--ink-2);
 }
 .quote {
@@ -384,7 +409,7 @@ main,
 .quote p {
   margin: 0;
   font-style: italic;
-  font-size: 19px;
+  font-size: var(--size-lede);
   line-height: 1.45;
 }
 .quote footer {
@@ -402,17 +427,18 @@ main,
   color: var(--ink-3);
 }
 
-.card h2 {
+.card h2,
+.viewer-text h2 {
   margin: 12px 0 0;
   font-family: var(--hand);
   font-weight: 400;
-  font-size: 50px;
+  font-size: var(--size-title);
   line-height: 1.15;
 }
 .card-key {
   margin: 4px 0 0;
   font-style: italic;
-  font-size: 19px;
+  font-size: var(--size-lede);
   color: var(--ink-2);
 }
 .entry {
@@ -427,12 +453,11 @@ main,
   grid-column: 1 / -1;
 }
 .entry dt {
-  font-size: 10px;
   color: var(--ink-3);
 }
 .entry dd {
   margin: 3px 0 0;
-  font-size: 16.5px;
+  font-size: var(--size-small);
   line-height: 1.35;
 }
 .neighbours {
@@ -448,8 +473,8 @@ main,
   grid-template-columns: 12px minmax(0, 1fr);
   gap: 10px;
   align-items: baseline;
-  font-size: 16px;
-  line-height: 1.4;
+  font-size: var(--size-small);
+  line-height: 1.45;
 }
 .neighbours .dot {
   width: 8px;
@@ -498,12 +523,13 @@ main,
   margin: 14px 0 0;
   font-family: var(--hand);
   font-weight: 400;
-  font-size: 52px;
+  font-size: var(--size-title);
   line-height: 1.15;
 }
 .section-head p:last-child {
   margin: 20px 0 0;
-  font-size: 19px;
+  font-size: var(--size-lede);
+  line-height: 1.5;
   color: var(--ink-2);
 }
 .grid {
@@ -535,20 +561,19 @@ main,
 .tile-ident {
   display: block;
   margin-top: 18px;
-  font-size: 10.5px;
   color: var(--ink-3);
 }
 .tile-name {
   display: block;
   margin-top: 4px;
   font-family: var(--hand);
-  font-size: 28px;
+  font-size: var(--size-name);
   line-height: 1.2;
 }
 .tile-key {
   display: block;
   margin-top: 2px;
-  font-size: 15.5px;
+  font-size: var(--size-small);
   color: var(--ink-2);
 }
 
@@ -565,7 +590,6 @@ main,
 }
 .notes-body > p {
   margin: 0 0 1.1em;
-  font-size: 19.5px;
   line-height: 1.65;
 }
 .epigraph {
@@ -577,8 +601,8 @@ main,
 .epigraph p {
   margin: 0;
   font-style: italic;
-  font-size: 27px;
-  line-height: 1.35;
+  font-size: var(--size-quote);
+  line-height: 1.38;
 }
 .epigraph figcaption {
   margin-top: 12px;
@@ -600,13 +624,12 @@ main,
   border-top: 1px solid var(--hair);
 }
 .glossary dt {
-  font-size: 10.5px;
   color: var(--ink-3);
   padding-top: 4px;
 }
 .glossary dd {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--size-small);
   line-height: 1.5;
 }
 
@@ -677,12 +700,11 @@ main,
   min-width: 0;
 }
 .now-ident {
-  font-size: 10px;
   color: var(--ink-3);
 }
 .now-name {
   font-family: var(--hand);
-  font-size: 22px;
+  font-size: var(--size-name);
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
@@ -712,7 +734,6 @@ main,
   background: var(--ink);
 }
 .time {
-  font-size: 10.5px;
   color: var(--ink-2);
   font-variant-numeric: tabular-nums;
 }
@@ -731,7 +752,6 @@ main,
   gap: 10px;
 }
 .index-label {
-  font-size: 10px;
   color: var(--ink-3);
   white-space: nowrap;
 }
@@ -766,7 +786,8 @@ main,
   background: var(--pigment);
   transition: transform 0.2s var(--ease);
 }
-.index button:hover::before {
+.index button:hover::before,
+.index button:focus-visible::before {
   transform: scale(1.4);
 }
 .index button[aria-current='true']::before {
@@ -774,35 +795,12 @@ main,
     0 0 0 2px var(--paper),
     0 0 0 3px var(--seal);
 }
-.index button::after {
-  content: attr(data-name);
-  position: absolute;
-  bottom: calc(100% + 4px);
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 3px 7px;
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: none;
-  white-space: nowrap;
-  color: var(--ink);
-  background: var(--paper);
-  border: 1px solid var(--hair);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s;
-}
-.index button:hover::after,
-.index button:focus-visible::after {
-  opacity: 1;
-}
 .cycle {
   display: flex;
   align-items: center;
   gap: 8px;
   color: var(--ink-2);
   cursor: pointer;
-  font-size: 10.5px;
 }
 .cycle input {
   accent-color: var(--ink);
@@ -860,13 +858,6 @@ main,
   height: 100%;
   pointer-events: none;
 }
-.viewer-text h2 {
-  margin: 12px 0 0;
-  font-family: var(--hand);
-  font-weight: 400;
-  font-size: 50px;
-  line-height: 1.15;
-}
 .viewer-actions {
   margin-top: 30px;
 }
@@ -894,13 +885,24 @@ main,
   }
   .grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 56px 32px;
   }
 }
 
-@media (max-width: 860px) {
-  body {
-    font-size: 17px;
+/* A short screen, such as a laptop or a tablet held sideways: a tighter frame
+   leaves more height to the chart. */
+@media (min-width: 861px) and (max-height: 820px) {
+  .hero {
+    --top: 72px;
+    --bottom: 80px;
+    --gap: 20px;
+    --scroll-h: 112px;
   }
+}
+
+/* A phone or a tablet held upright: one column, the handscroll right under
+   the chart and the card beneath it. */
+@media (max-width: 860px) {
   .masthead {
     padding: 18px 20px;
   }
@@ -908,63 +910,38 @@ main,
     gap: 18px;
   }
   .hero {
+    --gap: 22px;
+    --scroll-h: 112px;
     padding: 72px 20px 120px;
     align-items: start;
   }
   .hero-grid {
     grid-template-columns: minmax(0, 1fr);
-    gap: 28px;
+    gap: var(--gap);
   }
   .chart {
-    width: 100%;
-  }
-  .aside h1 {
-    font-size: 48px;
-  }
-  .hero {
-    --scroll-h: 112px;
-    grid-template-rows: none;
-    gap: 22px;
-  }
-  /* On a phone the scroll sits right under the chart, above the card. */
-  .hero-grid {
-    display: contents;
-  }
-  .chart {
-    order: 0;
-  }
-  .scroll {
-    order: 1;
+    width: min(100%, 640px);
   }
   .scroll-head {
     flex-direction: column;
     gap: 2px;
   }
   .aside {
-    order: 2;
+    width: 100%;
+    max-width: 640px;
+    justify-self: center;
   }
   .plates,
   .notes {
     padding: 96px 20px;
   }
   .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 40px 16px;
     margin-top: 48px;
-  }
-  .tile-name {
-    font-size: 22px;
-  }
-  .tile-key {
-    font-size: 14px;
   }
   .notes {
     grid-template-columns: minmax(0, 1fr);
     gap: 24px;
     padding-bottom: 140px;
-  }
-  .epigraph p {
-    font-size: 23px;
   }
   .glossary div {
     grid-template-columns: minmax(0, 1fr);
@@ -998,6 +975,13 @@ main,
   }
   .viewer-plate {
     width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 40px 16px;
   }
 }
 
