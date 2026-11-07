@@ -6,14 +6,15 @@ import '@fontsource/newsreader/500.css';
 import '@fontsource/ibm-plex-mono/400.css';
 import '../styles/global.css';
 import '../styles/sky.css';
-import { etudes, LETTERS, MINOR_LETTERS, PIGMENTS, keyIndex, pigment, short, clock, nameOf } from '../lib/theory';
+import { etudes, LETTERS, MINOR_LETTERS, PIGMENTS, keyIndex, pigment, ident, short, clock, nameOf, type Etude } from '../lib/theory';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const site = Astro.site ?? new URL('https://www.theodoreoy.com');
 const title = 'The Étude Sky';
 const description =
-  "Chopin's twenty-four études charted as stars on the circle of fifths, with a plate drawn from each recording and a handscroll in watercolour that unrolls as you listen. Curated by Theodore Ouyang.";
+  'Chopin’s twenty-four études charted as stars on the circle of fifths, with a plate drawn from each recording and a handscroll in watercolour that unrolls as you listen. Curated by Theodore Ouyang.';
 const total = etudes.reduce((s, e) => s + e.duration, 0);
+const spoken = (e: Etude) => [ident(e), e.nickname, e.key].filter(Boolean).join(', ');
 
 // The chart: position angle is the key around the circle of fifths, C at 0°;
 // major keys on the outer ring, their relative minors on the inner ring.
@@ -31,7 +32,7 @@ for (const e of etudes) {
 }
 const stars = etudes.map((e) => {
   const g = groups.get(`${keyIndex(e)}-${e.mode}`)!;
-  const along = (g.indexOf(e.id) - (g.length - 1) / 2) * 42;
+  const along = (g.indexOf(e.id) - (g.length - 1) / 2) * 60;
   const p = at(keyIndex(e), RING[e.mode], along);
   return { e, ...p, r: 5 + (4.6 - e.magnitude) * 4.4 };
 });
@@ -46,7 +47,6 @@ const arc = (k: number, r: number) => {
   return `M${C + Math.sin(a0) * r} ${C - Math.cos(a0) * r} A${r} ${r} 0 0 1 ${C + Math.sin(a1) * r} ${C - Math.cos(a1) * r}`;
 };
 const ticks = Array.from({ length: 60 }, (_, k) => k);
-const pad = (n: number) => String(n).padStart(2, '0');
 ---
 
 <!doctype html>
@@ -78,56 +78,75 @@ const pad = (n: number) => String(n).padStart(2, '0');
     <main>
       <section class="hero" id="sky" aria-label="The star chart">
         <div class="hero-grid">
-          <figure class="chart">
-            <svg id="chart" viewBox="0 0 1000 1000" role="group" aria-labelledby="chart-title">
-              <title id="chart-title">The twenty-four études charted on the circle of fifths</title>
-              <defs>
-                <filter id="wash" x="-60%" y="-60%" width="220%" height="220%">
-                  <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" seed="11" />
-                  <feDisplacementMap in="SourceGraphic" scale="12" />
-                  <feGaussianBlur stdDeviation="2" />
-                </filter>
-              </defs>
-              <circle cx={C} cy={C} r="446" class="ring outer" />
-              <circle cx={C} cy={C} r={RING.major} class="ring" />
-              <circle cx={C} cy={C} r={RING.minor} class="ring" />
-              {ticks.map((k) => {
-                const a = at(k, 446);
-                const b = at(k, k % 5 === 0 ? 432 : 439);
-                return <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} class={k % 5 === 0 ? 'tick major' : 'tick'} />;
-              })}
-              {PIGMENTS.map((p, k) => <path d={arc(k, 388)} stroke={p} class="wheel" />)}
-              {LETTERS.map((l, k) => {
-                const p = at(k, 412);
-                return <text x={p.x} y={p.y} dy="0.36em" class="key major">{l}</text>;
-              })}
-              {MINOR_LETTERS.map((l, k) => {
-                const p = at(k, 172);
-                return <text x={p.x} y={p.y} dy="0.36em" class="key minor">{l}</text>;
-              })}
-              <polyline points={route(10)} class="route op10" />
-              <polyline points={route(25)} class="route op25" />
-              <path id="trail" class="trail" d="" />
-              {stars.map((s) => (
-                <g
-                  class="star"
-                  data-id={s.e.id}
-                  data-x={s.x.toFixed(1)}
-                  data-y={s.y.toFixed(1)}
-                  tabindex="0"
-                  role="button"
-                  aria-label={`Op. ${s.e.op}, No. ${s.e.no}, ${s.e.key}${s.e.en ? `, ${s.e.en}` : ''}, magnitude ${s.e.magnitude}`}
-                  style={`--pigment:${pigment(s.e)}`}
-                >
-                  <circle cx={s.x} cy={s.y} r={s.r * 2.4} class="halo" filter="url(#wash)" />
-                  <circle cx={s.x} cy={s.y} r={s.r + 8} class="select" />
-                  <circle cx={s.x} cy={s.y} r={s.r} class={`body ${s.e.mode}`} />
-                  <text x={s.x} y={s.y + s.r + 18} class="tag">{short(s.e)}</text>
-                </g>
-              ))}
-            </svg>
-            <div class="tip" id="tip" aria-hidden="true"></div>
-          </figure>
+          <div class="stage">
+            <figure class="chart">
+              <svg id="chart" viewBox="0 0 1000 1000" role="group" aria-labelledby="chart-title">
+                <title id="chart-title">The twenty-four études charted on the circle of fifths</title>
+                <defs>
+                  <filter id="wash" x="-60%" y="-60%" width="220%" height="220%">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" seed="11" />
+                    <feDisplacementMap in="SourceGraphic" scale="12" />
+                    <feGaussianBlur stdDeviation="2" />
+                  </filter>
+                </defs>
+                <circle cx={C} cy={C} r="446" class="ring outer" />
+                <circle cx={C} cy={C} r={RING.major} class="ring" />
+                <circle cx={C} cy={C} r={RING.minor} class="ring" />
+                {ticks.map((k) => {
+                  const a = at(k, 446);
+                  const b = at(k, k % 5 === 0 ? 432 : 439);
+                  return <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} class={k % 5 === 0 ? 'tick major' : 'tick'} />;
+                })}
+                {PIGMENTS.map((p, k) => <path d={arc(k, 388)} stroke={p} class="wheel" />)}
+                {LETTERS.map((l, k) => {
+                  const p = at(k, 412);
+                  return <text x={p.x} y={p.y} dy="0.36em" class="key major">{l}</text>;
+                })}
+                {MINOR_LETTERS.map((l, k) => {
+                  const p = at(k, 152);
+                  return <text x={p.x} y={p.y} dy="0.36em" class="key minor">{l}</text>;
+                })}
+                <polyline points={route(10)} class="route op10" />
+                <polyline points={route(25)} class="route op25" />
+                <path id="trail" class="trail" d="" />
+                {stars.map((s) => (
+                  <g
+                    class="star"
+                    data-id={s.e.id}
+                    data-x={s.x.toFixed(1)}
+                    data-y={s.y.toFixed(1)}
+                    tabindex="0"
+                    role="button"
+                    aria-label={`${spoken(s.e)}, magnitude ${s.e.magnitude}`}
+                    style={`--pigment:${pigment(s.e)}`}
+                  >
+                    <circle cx={s.x} cy={s.y} r={s.r * 2.4} class="halo" filter="url(#wash)" />
+                    <circle cx={s.x} cy={s.y} r={s.r + 8} class="select" />
+                    <circle cx={s.x} cy={s.y} r={s.r} class={`body ${s.e.mode}`} />
+                    <text x={s.x} y={s.y + s.r + 5} class="tag">{short(s.e)}</text>
+                  </g>
+                ))}
+              </svg>
+            </figure>
+            <figure class="scroll" aria-labelledby="scroll-title">
+              <figcaption class="scroll-head">
+                <span id="scroll-title">Handscroll</span>
+                <span id="scroll-note"></span>
+              </figcaption>
+              <div class="scroll-paper">
+                <ol class="scroll-rows" aria-hidden="true">
+                  {LETTERS.map((l, k) => (
+                    <li style={`--pigment:${PIGMENTS[k]}`}><span>{l}</span></li>
+                  ))}
+                </ol>
+                <div class="scroll-sheet">
+                  <canvas id="scroll-a" class="on" aria-hidden="true"></canvas>
+                  <canvas id="scroll-b" aria-hidden="true"></canvas>
+                  <i class="playhead" id="playhead"></i>
+                </div>
+              </div>
+            </figure>
+          </div>
 
           <div class="aside" aria-live="polite">
             <section class="intro" id="intro">
@@ -139,11 +158,11 @@ const pad = (n: number) => String(n).padStart(2, '0');
               </p>
               <blockquote class="quote">
                 <p>“Nature always wears the colors of the spirit.”</p>
-                <footer>Ralph Waldo Emerson, <cite>Nature</cite>, 1836</footer>
+                <footer>Ralph Waldo Emerson, <cite>Nature</cite> (1836)</footer>
               </blockquote>
               <div class="actions">
-                <button type="button" class="button" data-begin>Begin with Op. 10, No. 1</button>
-                <span class="hint">the full cycle · {Math.round(total / 60)} min</span>
+                <button type="button" class="button" data-begin>Begin with {ident(etudes[0])}</button>
+                <span class="hint">The full cycle · {Math.round(total / 60)} min</span>
               </div>
             </section>
 
@@ -163,24 +182,6 @@ const pad = (n: number) => String(n).padStart(2, '0');
             </article>
           </div>
         </div>
-        <figure class="scroll" aria-labelledby="scroll-title">
-          <figcaption class="scroll-head">
-            <span id="scroll-title">Handscroll</span>
-            <span id="scroll-note"></span>
-          </figcaption>
-          <div class="scroll-paper">
-            <ol class="scroll-rows" aria-hidden="true">
-              {LETTERS.map((l, k) => (
-                <li style={`--pigment:${PIGMENTS[k]}`}><span>{l}</span></li>
-              ))}
-            </ol>
-            <div class="scroll-sheet">
-              <canvas id="scroll-a" class="on" aria-hidden="true"></canvas>
-              <canvas id="scroll-b" aria-hidden="true"></canvas>
-              <i class="playhead" id="playhead"></i>
-            </div>
-          </div>
-        </figure>
       </section>
 
       <section class="plates" id="plates" aria-labelledby="plates-title">
@@ -197,8 +198,8 @@ const pad = (n: number) => String(n).padStart(2, '0');
           {etudes.map((e) => (
             <li>
               <button type="button" class="plate-tile" data-plate={e.id}>
-                <img src={`${base}plates/thumb/${e.id}.jpg`} alt={`Plate for Op. ${e.op}, No. ${e.no} in ${e.key}`} loading="lazy" width="520" height="520" />
-                <span class="tile-ident">Op. {e.op} · No. {pad(e.no)}</span>
+                <img src={`${base}plates/thumb/${e.id}.jpg`} alt={`Plate for ${ident(e)}, ${e.key}`} loading="lazy" width="520" height="520" />
+                <span class="tile-ident">{ident(e)}</span>
                 <span class="tile-name">{nameOf(e)}</span>
                 <span class="tile-key">{e.key} · mag {e.magnitude.toFixed(1)} · {clock(e.duration)}</span>
               </button>
@@ -214,7 +215,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
         </div>
         <div class="notes-body">
           <p>
-            When I look up at the night sky, I think of Chopin's études. This chart is the picture that forms in my mind: each étude a star, placed
+            When I look up at the night sky, I think of Chopin’s études. This chart is the picture that forms in my mind: each étude a star, placed
             by its key, and each a plate drawn from the music itself. Someone else, looking up, would see another sky.
           </p>
           <p>
@@ -241,7 +242,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
           <dl class="glossary">
             <div><dt>Position angle</dt><dd>The key on the circle of fifths: C at 0°, each fifth 30° clockwise.</dd></div>
             <div><dt>Ring</dt><dd>Major keys on the outer ring; each relative minor on the inner ring, at the same angle.</dd></div>
-            <div><dt>Magnitude</dt><dd>The loudness of the recording on Pogson's scale, one magnitude to 4 dB. Brighter stars are drawn larger.</dd></div>
+            <div><dt>Magnitude</dt><dd>The loudness of the recording on Pogson’s scale, one magnitude to 4 dB. Brighter stars are drawn larger.</dd></div>
             <div><dt>Multiple stars</dt><dd>Études in the same key, drawn as one system: a triple in A minor and seven doubles.</dd></div>
             <div><dt>Handscroll</dt><dd>A chromagram: time across, from the first note to the last; pitch class down, in the order of the circle of fifths, C at the top. Each stroke is a note, as broad as it was struck and fading as it decays. Touch the scroll to move to that moment.</dd></div>
             <div><dt>Asterisms</dt><dd>Op. 10, solid, and Op. 25, dashed, each joined in order of publication. Op. 10 is built mostly from pairs in relative keys; Op. 25 moves more often by a third.</dd></div>
@@ -249,8 +250,8 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
           <h3>Credits</h3>
           <dl class="glossary">
-            <div><dt>Music</dt><dd>Frédéric Chopin, 12 Études, Op. 10 (1833) and 12 Études, Op. 25 (1837).</dd></div>
-            <div><dt>Recordings</dt><dd>Edward Neeman, piano, recorded for Musopen's <cite>Set Chopin Free</cite> (2014). Public domain; loudness-matched.</dd></div>
+            <div><dt>Music</dt><dd>Frédéric Chopin, 12 Études Op. 10 (1833) and 12 Études Op. 25 (1837).</dd></div>
+            <div><dt>Recordings</dt><dd>Edward Neeman, piano, recorded for Musopen’s <cite>Set Chopin Free</cite> (2014). Public domain; loudness-matched.</dd></div>
             <div><dt>Method</dt><dd>A chromagram for pitch class, spectral flux for onsets, gated loudness for magnitude.</dd></div>
             <div><dt>Curator</dt><dd><a href="https://www.theodoreoy.com/">Theodore Ouyang</a></dd></div>
           </dl>
@@ -271,7 +272,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 6v12M6 6l8 6-8 6z" /></svg>
         </button>
       </div>
-      <p class="now"><span class="now-ident" id="now-ident">Op. 10 · No. 01</span><span class="now-name" id="now-name">Waterfall</span></p>
+      <p class="now"><span class="now-ident" id="now-ident">{ident(etudes[0])}</span><span class="now-name" id="now-name">{nameOf(etudes[0])}</span></p>
       <div class="bar" id="bar" role="slider" tabindex="0" aria-label="Position in the étude" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
         <i id="bar-fill"></i>
       </div>
@@ -284,20 +285,16 @@ const pad = (n: number) => String(n).padStart(2, '0');
               {etudes
                 .filter((e) => e.op === op)
                 .map((e) => (
-                  <button
-                    type="button"
-                    data-goto={e.id}
-                    data-name={`${e.op}·${e.no} ${e.en || e.key}`}
-                    style={`--pigment:${pigment(e)}`}
-                    aria-label={`Op. ${e.op} No. ${e.no}, ${e.en ? `${e.en}, ` : ''}${e.key}`}
-                  ></button>
+                  <button type="button" data-goto={e.id} style={`--pigment:${pigment(e)}`} aria-label={spoken(e)}></button>
                 ))}
             </span>
           </li>
         ))}
       </ol>
-      <label class="cycle" title="Continue through the cycle"><input type="checkbox" id="cycle" checked /><span>cycle</span></label>
+      <label class="cycle" title="Continue through the cycle"><input type="checkbox" id="cycle" checked /><span>Cycle</span></label>
     </footer>
+
+    <div class="tip" id="tip" aria-hidden="true"></div>
 
     <dialog class="viewer" id="viewer" aria-labelledby="viewer-name">
       <button type="button" class="text-link close" data-close>Close</button>

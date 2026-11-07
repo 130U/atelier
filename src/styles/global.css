@@ -11,6 +11,17 @@
   --serif: 'Newsreader', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
   --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   --ease: cubic-bezier(0.2, 0.7, 0.1, 1);
+
+  /* Type: one size per role, easing from a phone to a wide desk. */
+  --size-axis: 9px; /* the row letters of the handscroll */
+  --size-label: 11px; /* mono capitals: labels, buttons, captions */
+  --size-small: clamp(15px, 14.25px + 0.2vw, 16.5px); /* entries, key lines, glossary */
+  --size-body: clamp(17px, 16.25px + 0.2vw, 18.5px); /* running text */
+  --size-lede: clamp(18px, 17px + 0.28vw, 20px); /* ledes and short quotations */
+  --size-quote: clamp(22px, 19px + 0.8vw, 27px); /* epigraphs */
+  --size-name: clamp(22px, 20px + 0.5vw, 26px); /* étude names in lists */
+  --size-title: clamp(38px, 31px + 1.6vw, 52px); /* section and étude titles */
+  --size-display: clamp(46px, 37px + 2.2vw, 64px); /* the title of the page */
   color-scheme: light;
 }
 
@@ -27,8 +38,8 @@ body {
   margin: 0;
   color: var(--ink);
   font-family: var(--serif);
-  font-size: 18px;
-  line-height: 1.55;
+  font-size: var(--size-body);
+  line-height: 1.6;
   font-optical-sizing: auto;
   background: var(--paper);
   -webkit-font-smoothing: antialiased;

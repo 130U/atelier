@@ -1,6 +1,7 @@
 // Downloads Edward Neeman's recordings of the 24 études from Wikimedia
 // Commons (public domain, Musopen's "Set Chopin Free", 2014) into
 // .cache/recordings/. Run with NODE_USE_ENV_PROXY=1 behind a local proxy.
+import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -45,7 +46,6 @@ for (const f of files) {
       await new Promise((ok) => setTimeout(ok, 3000 * attempt));
     }
   }
-  const { createHash } = await import('node:crypto');
   if (createHash('sha1').update(buf).digest('hex') !== f.sha1) throw new Error(`${f.id}: checksum mismatch`);
   await fs.writeFile(out, buf);
   console.log(`${f.id}  ${(buf.length / 1e6).toFixed(1)} MB`);

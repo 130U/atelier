@@ -11,20 +11,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import opentype from 'opentype.js';
 import { TAU, clamp, smoothstep, hash, noise, fbm, len, hex } from './lib.mjs';
-import palette from '../src/data/palette.json' with { type: 'json' };
+import { LETTERS, PIGMENTS, PLATE, fifths, keyIndex, ident, short, nameOf, clock } from '../src/lib/theory.ts';
 
 export const SIZE = 1500;
-export const R0 = 0.05;
-export const R1 = 0.335;
+const { R0, R1 } = PLATE;
 const BAND_IN = 0.352;
 const BAND_OUT = 0.412;
-export const INK = '#1f2747';
+const INK = '#1f2747';
 export const GOLD = '#a8781f';
-export const LETTERS = palette.letters;
-export const PIGMENTS = palette.pigments;
-
-export const fifths = (pc) => (pc * 7) % 12;
-export const keyIndex = (e) => fifths(e.mode === 'major' ? e.tonic : (e.tonic + 3) % 12);
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const font = (p) => opentype.parse(fs.readFileSync(path.join(root, 'node_modules', '@fontsource', p)).buffer.slice(0));
@@ -65,7 +59,7 @@ export function text(str, x, y, size, { face = 'serif', anchor = 'start', fill =
   return out.join('');
 }
 
-export function stars(data) {
+function stars(data) {
   const out = [];
   const o = data.onsets;
   for (let i = 0; i < o.length; i += 3) {
@@ -171,7 +165,7 @@ export function plateWork(e, data) {
 }
 
 // Ink, gold and lettering drawn over the paint.
-export function plateSvg(e, data, catalogue) {
+export function plateSvg(e, data) {
   const S = SIZE;
   const X = (x) => +((x + 0.5) * S).toFixed(1);
   const Y = (y) => +((0.5 - y) * S).toFixed(1);
@@ -247,17 +241,15 @@ export function plateSvg(e, data, catalogue) {
 
   // The centre: a small gilded boss with the catalogue number.
   parts.push(`<circle cx="${C}" cy="${C}" r="${R(R0 * 0.66)}" fill="url(#leaf)" stroke="${INK}" stroke-opacity="0.6" stroke-width="1"/>`);
-  parts.push(text(`${e.op}·${e.no}`, C, C + 9, 27, { face: 'italic', anchor: 'middle' }));
+  parts.push(text(short(e), C, C + 9, 27, { face: 'italic', anchor: 'middle' }));
 
   // Corners, as on an atlas plate.
   const m = 70;
-  parts.push(text(`OP. ${e.op} · NO. ${e.no}`, m, m + 20, 21, { face: 'mono', spacing: 2, opacity: 0.8 }));
+  parts.push(text(ident(e).toUpperCase(), m, m + 20, 21, { face: 'mono', spacing: 2, opacity: 0.8 }));
   parts.push(text(e.key, m, m + 66, 34, { face: 'serif' }));
   parts.push(text(e.tempo, m, m + 104, 27, { face: 'italic', opacity: 0.75 }));
-  parts.push(text(e.en || e.key, m - 2, S - m - 10, 70, { face: 'hand' }));
-  const minutes = Math.floor(data.duration / 60);
-  const seconds = String(Math.round(data.duration % 60)).padStart(2, '0');
-  const lines = [`MAG ${catalogue.magnitude.toFixed(1)}`, `${minutes}:${seconds}`, `${data.onsets.length / 3} ONSETS`];
+  parts.push(text(nameOf(e), m - 2, S - m - 10, 70, { face: 'hand' }));
+  const lines = [`MAG ${e.magnitude.toFixed(1)}`, clock(e.duration), `${e.onsets} ONSETS`];
   lines.forEach((line, i) => parts.push(text(line, S - m, S - m - 8 - (lines.length - 1 - i) * 32, 19, { face: 'mono', anchor: 'end', spacing: 1.5, opacity: 0.75 })));
 
   // A small rose at the top right: north is C.

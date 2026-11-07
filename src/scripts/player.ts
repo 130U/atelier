@@ -52,9 +52,6 @@ export class Player {
   get playing() {
     return !!this.deck.id && !this.deck.el.paused;
   }
-  element(id: string) {
-    return this.decks.find((d) => d.id === id)?.el ?? null;
-  }
 
   // Start an étude from the beginning, fading out whatever is sounding.
   // Everything up to el.play() runs synchronously, inside the visitor's tap.
