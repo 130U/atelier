@@ -22,7 +22,7 @@
     { "id": "op25-08", "op": 25, "no": 8, "tonic": 1, "mode": "major", "key": "D♭ major", "tempo": "Vivace", "nickname": "Sixths" },
     { "id": "op25-09", "op": 25, "no": 9, "tonic": 6, "mode": "major", "key": "G♭ major", "tempo": "Allegro assai", "nickname": "Butterfly" },
     { "id": "op25-10", "op": 25, "no": 10, "tonic": 11, "mode": "minor", "key": "B minor", "tempo": "Allegro con fuoco", "nickname": "Octaves" },
-    { "id": "op25-11", "op": 25, "no": 11, "tonic": 9, "mode": "minor", "key": "A minor", "tempo": "Lento — Allegro con brio", "nickname": "Winter Wind" },
+    { "id": "op25-11", "op": 25, "no": 11, "tonic": 9, "mode": "minor", "key": "A minor", "tempo": "Lento – Allegro con brio", "nickname": "Winter Wind" },
     { "id": "op25-12", "op": 25, "no": 12, "tonic": 0, "mode": "minor", "key": "C minor", "tempo": "Allegro molto, con fuoco", "nickname": "Ocean" }
   ]
 }
