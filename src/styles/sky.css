@@ -527,6 +527,7 @@ main,
   line-height: 1.15;
 }
 .section-head p:last-child {
+  max-width: 30em;
   margin: 20px 0 0;
   font-size: var(--size-lede);
   line-height: 1.5;
@@ -586,7 +587,7 @@ main,
   padding-bottom: 180px;
 }
 .notes-body {
-  max-width: 680px;
+  max-width: 30em;
 }
 .notes-body > p {
   margin: 0 0 1.1em;
