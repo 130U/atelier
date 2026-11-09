@@ -1,74 +1,57 @@
 # The Étude Sky
 
-Chopin’s twenty-four études, charted as stars on the circle of fifths and curated by Theodore Ouyang at [www.theodoreoy.com/etude-sky/](https://www.theodoreoy.com/etude-sky/).
+> “Nature always wears the colors of the spirit.”
+>
+> Ralph Waldo Emerson, *Nature* (1836)
 
-Everything on the page is computed from the music: each recording is analysed once, and the chart, the plates and the handscroll are drawn from that analysis by fixed rules.
+**Chopin’s twenty-four études, charted as stars on the circle of fifths. Every mark is computed from the music.**
 
-- **The chart.** Each étude is a star. Its position angle is its key on the circle of fifths, C at the top; major keys sit on the outer ring and each relative minor on the inner ring at the same angle. Colour is the key, size is apparent magnitude. Fifteen keys hold all twenty-four, so études in one key form double and triple stars. Op. 10 and Op. 25 are joined in published order as two asterisms, solid and dashed.
-- **Magnitude.** A recording’s gated loudness on Pogson’s scale, one magnitude to 4 dB, with the mean of the twenty-four at 3.
-- **The plates.** One polar plot per étude inside a gilded astrolabe ring: angle is pitch class on the circle of fifths, distance from the centre is time, each point is an onset sized by its strength, each pitch class is laid in its pigment where and when it sounds, and the strongest onsets are joined in gold by a minimum spanning tree.
-- **The handscroll.** A watercolour chromagram beneath the chart: twelve rows of pitch class, time from left to right. Each note is a stroke in its pitch’s pigment that decays as the string does. The painting is rendered once per étude and unrolled at the playhead; the paper is seeded by the true solar time of the visit.
-- **The music.** Edward Neeman’s recordings for Musopen’s *Set Chopin Free* (2014), public domain, trimmed and loudness-matched. Two decks crossfade so one étude hands over to the next without a gap.
+**[View the sky](https://www.theodoreoy.com/etude-sky/)**
 
-## Structure
+[![The twenty-four plates of The Étude Sky, Op. 10 in the upper two rows and Op. 25 in the lower two](.github/readme/plates.jpg)](https://www.theodoreoy.com/etude-sky/)
 
-```
-src/
-  pages/index.astro       the page: chart, card, handscroll, gallery, notes, player
-  lib/theory.ts           the catalogue and its music theory: keys, magnitudes, relations, citation
-  lib/random.ts           seeded randomness shared by the browser and the renderer
-  scripts/sky.ts          interaction: selection, card, viewer, player wiring
-  scripts/scroll.ts       the handscroll painter
-  scripts/player.ts       the two-deck crossfading player
-  styles/global.css       colour and type tokens, paper
-  styles/sky.css          layout and components
-  data/etudes.json        the twenty-four études: key, tempo, nickname
-  data/palette.json       key letters and one pigment per step of the circle of fifths
-  data/recordings.json    duration, onset count and loudness per recording (generated)
-art/
-  lib.mjs                 noise and the per-pixel paper renderer
-  plate.mjs               the rules of a plate: pigment field and engraved overlay
-  render.mjs              renders every plate in parallel
-scripts/
-  fetch-recordings.mjs    downloads and verifies the source recordings
-  process-recordings.mjs  trims, matches loudness, encodes and analyses them
-  og.mjs                  the social preview image
-public/
-  audio/ data/ plates/    generated media, one file per étude
-```
+When I look up at the night sky, I think of Chopin’s études. This is the picture that forms in my mind: each étude a star, placed by its key, and each a plate drawn from the music itself. Someone else, looking up, would see another sky.
 
-`src/lib/theory.ts` is the single source for the catalogue: the site imports it through Astro, and the Node scripts import the same file directly.
+## The constraint
 
-## Commands
+I allowed myself no decorative invention. Each recording is analysed once, and the chart, the plates and the handscroll are drawn from that analysis by fixed rules, so every stroke on the page can be traced back to a sound.
 
-| Command | What it does |
+![One recording yields three measurements: a chromagram and spectral flux feed the handscroll and the plates, and gated loudness feeds the chart](.github/readme/recording-to-sky.svg)
+
+## Music, read as astronomy
+
+The chart borrows its method from real star catalogues and its geometry from harmony, so a listener who knows either can read the other.
+
+| In the music | In the sky |
 |---|---|
-| `npm install` | Install dependencies |
-| `npm run dev` | Serve the site at `localhost:4321/etude-sky/` |
-| `npm run fetch` | Download the 24 recordings into `.cache/recordings/` and verify their checksums |
-| `npm run process` | Write `public/audio/`, `public/data/` and `src/data/recordings.json` from the recordings |
-| `npm run render` | Render the plates into `public/plates/`; pass ids such as `op10-05` to render only those |
-| `npm run og` | Render the social preview `public/og.jpg` |
-| `npm run build` | Build the static site into `dist/` |
+| Key on the circle of fifths | Position angle: C at 0°, each fifth 30° clockwise |
+| Major, or its relative minor | Outer ring, or inner ring at the same angle |
+| Gated loudness of the recording | Apparent magnitude on Pogson’s scale, one magnitude to 4 dB |
+| Études that share a key | Multiple stars: a triple in A minor and seven doubles |
+| Order of publication | Two asterisms: Op. 10 solid, Op. 25 dashed |
 
-The scripts need Node 22.18 or later. Behind a local proxy, run the fetch step with `NODE_USE_ENV_PROXY=1`.
+Fifteen keys hold all twenty-four études. Drawn this way, the two books show a difference the ear learns slowly: Op. 10 is built mostly from pairs in relative keys, while Op. 25 moves more often by a third.
 
-## Data
+<p align="center"><img src=".github/readme/chart.jpg" width="620" alt="Twenty-four stars on the circle of fifths, coloured by key and joined into two asterisms"></p>
 
-`public/data/<id>.json` holds, per recording, its duration, its integrated loudness, its onsets as `[centiseconds, strength 0–99, pitch-class bitmask]` triples, and its loudness every quarter second on a 0–99 scale.
+## The plates
 
-## Conventions
+Each plate is one polar plot inside a gilded astrolabe ring. Position angle is pitch class on the circle of fifths, distance from the centre is time, and every point is a note as it is struck, sized by its strength. Each pitch class keeps its colour from the wheel, laid where and when it sounds, and gold joins the strongest notes in a minimum spanning tree. One set of rules draws all twenty-four, so their differences are differences in the music.
 
-- An étude is cited as `Op. 10 No. 3` in text and `10·3` on the chart; both come from `ident` and `short` in `theory.ts`. An étude without a nickname is named after its key, as in “Étude in F minor”.
-- Type sizes are tokens in `global.css`, one per role, each easing between a phone and a wide desk. Mono labels are set in capitals by CSS and written in sentence case in the markup.
-- Copy is English, with British spelling outside quotations.
+<p align="center"><img src=".github/readme/plate-op10-12.jpg" width="520" alt="A watercolour polar plot of Op. 10 No. 12 inside a gilded astrolabe ring"></p>
 
-## Extending
+<p align="center"><em>Op. 10 No. 12 in C minor, “Revolutionary”: 513 onsets over 2:42 at magnitude 2.0.</em></p>
 
-- **Change a colour.** Edit `src/data/palette.json`, then `npm run render` and `npm run og`; the chart and the handscroll read the palette at build time.
-- **Change an étude’s details.** Edit `src/data/etudes.json`, then re-render its plate.
-- **Replace a recording.** Put the new FLAC at `.cache/recordings/<id>.flac`, then run `npm run process -- <id>` and `npm run render -- <id>`.
+## The handscroll
 
-## Deployment
+Beneath the chart, each étude is written out as a handscroll. Its twelve rows are the circle of fifths laid flat, and time runs from left to right. Every note is a stroke of watercolour in the colour of its pitch, pressed where the key is struck and thinning as the string dies away, with pigments that mix by the Beer–Lambert law. A key reads as a band of neighbouring rows, and a change of key as that band moving.
 
-Pull requests are built by `.github/workflows/pages.yml`; merging to `main` builds and deploys to GitHub Pages. The workflow pins every action to a commit, installs with `npm ci --ignore-scripts`, and grants write access only to the deploy job.
+![Twelve rows of watercolour strokes, one row for each pitch class](.github/readme/handscroll-op10-12.jpg)
+
+## The listening
+
+The scroll unrolls with the music, so each stroke appears as its note sounds, and what is still to come shows faintly, like the underdrawing in a copybook. Two decks crossfade, so one étude hands over to the next without a gap, and the full cycle runs 62 minutes. The paper is laid by the true solar time at which you arrive, so no two visits are painted quite alike.
+
+## Credits
+
+Curated by Theodore Ouyang. Recordings by Edward Neeman for Musopen’s *Set Chopin Free* (2014), public domain, trimmed and loudness-matched. Type: Nothing You Could Do, Newsreader and IBM Plex Mono.
