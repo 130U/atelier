@@ -49,7 +49,7 @@ export function text(str, x, y, size, { face = 'serif', anchor = 'start', fill =
       strokes.push(`M${cx + s * 0.08} ${y - s * 0.78}V${y}M${cx + s * 0.08} ${y - s * 0.3}C${cx + s * 0.36} ${y - s * 0.48} ${cx + s * 0.44} ${y - s * 0.16} ${cx + s * 0.08} ${y}`);
       cx += s * 0.42;
     } else {
-      // opentype.js returns NaN for coordinates carrying float noise, so round first.
+      // Glyph origins use hundredth-pixel coordinates for finite outline paths.
       parts.push(f.getPath(ch, Math.round(cx * 100) / 100, Math.round(y * 100) / 100, size).toPathData(2));
       cx += f.getAdvanceWidth(ch, size) + spacing;
     }

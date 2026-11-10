@@ -32,8 +32,9 @@ if (!isMainThread) {
   await fs.mkdir(path.join(outDir, 'thumb'), { recursive: true });
   const only = process.argv.slice(2);
   const queue = etudes.map((e) => e.id).filter((id) => !only.length || only.includes(id));
+  const workers = Math.min(Math.max(1, os.availableParallelism() - 2), queue.length);
   await Promise.all(
-    Array.from({ length: Math.min(os.cpus().length - 2, queue.length) }, async () => {
+    Array.from({ length: workers }, async () => {
       while (queue.length) {
         const id = queue.shift();
         await new Promise((ok, fail) => {
